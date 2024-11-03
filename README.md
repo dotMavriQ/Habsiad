@@ -1,6 +1,6 @@
 # Obsitica
 
-Obsitica is an [Obsidian](https://obsidian.md/) plugin that integrates [Habitica](https://habitica.com) with Obsidian, allowing you to track your habits and dailies directly within your Obsidian vault. 
+Obsitica is an [Obsidian](https://obsidian.md/) plugin that integrates [Habitica](https://habitica.com) with Obsidian, allowing you to store your tracked habits and dailies directly within your Obsidian notes. 
 
 While [The Habitica Sync Plugin for Obsidian](https://github.com/SuperChamp234/habitica-sync) is an endearing endeavour that deserves respect in its own right, I personally never found that I could utilize it to become more productive while using Obsidian.
 
