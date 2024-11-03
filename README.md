@@ -32,7 +32,7 @@ So... What if I could merge the two?
 Doing so in a means that would satisfy my every ideal vision of productivity would not happen in early 2024.
 But I could at least write a script that would squeeze out my daily achievements and habits tracked into a piece of "standardized" markdown for me to paste at the bottom of my daily journal each day.
 
-This script would then develop into [Obsitica-Web]([url](https://dotmavriq.github.io/Obsitica-Web/)), which gave me an interface so I could use it on mobile as well with relative ease.
+This script would then develop into [Obsitica-Web](https://dotmavriq.github.io/Obsitica-Web/), which gave me an interface so I could use it on mobile as well with relative ease.
 
 And since the end of October 2024, Obsitica is finally in a stage where it can also provide the exact same functionality.
 The only thing left is to slowly turn this plugin into one out of, at most, 4 plugins that I need in order to have my optimal productivity flow.
