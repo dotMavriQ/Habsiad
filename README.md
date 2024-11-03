@@ -13,10 +13,10 @@ A Habit Tracker is a very nice help indeed, and I have found that combining it w
 With the aid of my partner (increased social incentive) we both underwent a journey of playing Habitica with each other. 
 I found it immensely helpful. 
 
-You have three fields for life improvement: Habits, Dailies and TODO's. 
-A Habit is something you ought to do often and want to learn how to do more often.
-A Daily is a habit that you want to be penalized for not being able to attain on a daily basis.
-A TODO is a single-use thing you need to clear within a per-case deadline.
+You have three fields for life improvement: Habits, Dailies and TODO's:
+* A **Habit** is something you ought to do often and want to learn how to do more often.
+* A **Daily** is a habit that you want to be penalized for not being able to attain on a daily basis.
+* A **TODO** is a single-use thing you need to clear within a per-case deadline.
 
 Every now and then I would drop out of Habitica though, I would grow tired with having to maintain it... Especially the TODO's can become quite nauseating to create, maintain and clear in an efficient manner.
 
