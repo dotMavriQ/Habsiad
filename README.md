@@ -4,38 +4,35 @@ Obsitica is an [Obsidian](https://obsidian.md/) plugin that integrates [Habitica
 
 While [The Habitica Sync Plugin for Obsidian](https://github.com/SuperChamp234/habitica-sync) is an endearing endeavour that deserves respect in its own right, I personally never found that I could utilize it to become more productive while using Obsidian.
 
-## Obsidian + Habitica - Match made in heaven
+### Obsidian + Habitica - Match made in heaven
+Between 2020 and 2024, I struggled to find a sustainable approach to improve my habits and work diligently toward achieving my goals.
 
-Between the years 2020 and 2024 I struggled immensely with trying to find an approach that I would not abandon to improve my habits and working harder to achieve my goals.
+A habit tracker is a valuable tool, and I discovered that combining it with self-authoring (keeping a journal) maximizes my incentives to stay on track and record my achievements and progress for posterity.
 
-A Habit Tracker is a very nice help indeed, and I have found that combining it with self-authoring (keeping a journal) maximizes MY incentives to keep my life on track and to then record my achievements and my progress for posterity.
+With the help of my partner—adding a social incentive—we embarked on a journey of using Habitica together, which I found immensely helpful.
 
-With the aid of my partner (increased social incentive) we both underwent a journey of playing Habitica with each other. 
-I found it immensely helpful. 
+Habitica offers three areas for life improvement: Habits, Dailies, and To-Dos:
 
-You have three fields for life improvement: Habits, Dailies and TODO's:
-* A **Habit** is something you ought to do often and want to learn how to do more often.
-* A **Daily** is a habit that you want to be penalized for not being able to attain on a daily basis.
-* A **TODO** is a single-use thing you need to clear within a per-case deadline.
+- A **Habit** is something you aim to do regularly and want to encourage yourself to do more often.
+- A **Daily** is a habit that you wish to hold yourself accountable for completing every day.
+- A **To-Do** is a one-time task that needs to be completed by a specific deadline.
 
-Every now and then I would drop out of Habitica though, I would grow tired with having to maintain it... Especially the TODO's can become quite nauseating to create, maintain and clear in an efficient manner.
+However, I occasionally drifted away from Habitica, growing tired of maintaining it—especially the To-Dos, which can become tedious to create, manage, and clear efficiently.
 
-The single biggest flaw with Habitica in particular, FOR ME, is that my history of progress, or lack thereof, isn't kept anywhere. BUT. IT HAS A PUBLIC API FOR SAID DATA.
+The biggest drawback of Habitica for me is that my history of progress, or lack thereof, isn't stored anywhere. But it does have a public API for that data.
 
-And when I tried every other alternative on the market I found that even the best paid options lack things that Habitica has solved, namely:
-* The UI is honestly quite intuitive compared to even paid alternatives.
-* The gamification actually helped to create the habit of creating and maintaining habits when I started out.
-* You can set your own "Reset Time", this is very important for any person who does not obsessively "quit their day" at `00:00`, which I rarely, if ever, do.
-* IT HAS A PUBLIC API
+When I tried other alternatives on the market, even the best paid options lacked features that Habitica excels at, namely:
 
-So... What if I could merge the two? 
-Doing so in a means that would satisfy my every ideal vision of productivity would not happen in early 2024.
-But I could at least write a script that would squeeze out my daily achievements and habits tracked into a piece of "standardized" markdown for me to paste at the bottom of my daily journal each day.
+- The user interface is quite intuitive, even compared to paid alternatives.
+- The gamification aspect helped me develop the habit of creating and maintaining habits when I started.
+- You can set your own "Reset Time," which is crucial for anyone who doesn't end their day precisely at midnight, as I rarely do.
+- It has a public API.
 
-This script would then develop into [Obsitica-Web](https://dotmavriq.github.io/Obsitica-Web/), which gave me an interface so I could use it on mobile as well with relative ease.
+So, what if I could merge the two? Achieving my ideal vision of productivity wouldn't happen immediately, but I could at least write a script to extract my daily achievements and tracked habits into a piece of standardized markdown to paste at the bottom of my daily journal each day.
 
-And since the end of October 2024, Obsitica is finally in a stage where it can also provide the exact same functionality.
-The only thing left is to slowly turn this plugin into one out of, at most, 4 plugins that I need in order to have my optimal productivity flow.
+This script evolved into [Obsitica-Web](https://dotmavriq.github.io/Obsitica-Web/), providing an interface that I could use on mobile with relative ease.
+
+As of the end of October 2024, Obsitica has reached a stage where it can provide the same functionality. The next step is to develop this plugin further into one of, at most, four plugins I need for my optimal productivity flow.
 
 ## Features
 
