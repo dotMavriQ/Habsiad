@@ -1,6 +1,8 @@
 import { ItemView, TFolder, TFile, WorkspaceLeaf } from "obsidian";
 import ObsiticaPlugin from "../main"; // Ensure the path matches your project structure
 
+import { displayGlossaryTable } from "./tabs/frontmatterGlossary";
+
 export const VIEW_TYPE_SIDEBAR = "obsitica-sidebar-view";
 
 export class SidebarView extends ItemView {
@@ -181,8 +183,9 @@ export class SidebarView extends ItemView {
   }
 
   private displayGlossaryTab(container: HTMLElement) {
-    container.createEl("p", {
-      text: "Frontmatter Glossary will be implemented soon.",
-    });
+    displayGlossaryTable(container, this.plugin);
+    // container.createEl("p", {
+    //   text: "Frontmatter Glossary will be implemented soon.",
+    // });
   }
 }

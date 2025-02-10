@@ -146,6 +146,18 @@ export default class ObsiticaPlugin extends Plugin {
     await this.insertHabitsAndDailies(activeView);
   }
 
+  async saveCustomFrontmatterName(key: string, value: string) {
+    if (!this.settings.customFrontmatter) {
+      this.settings.customFrontmatter = {};
+    }
+    this.settings.customFrontmatter[key] = value;
+    await this.saveSettings();
+  }
+
+  async getCustomFrontmatterName(key: string): Promise<string> {
+    return this.settings.customFrontmatter?.[key] || "";
+  }
+
   async insertHabitsAndDailies(activeView: MarkdownView) {
     try {
       const tasks = await this.habiticaService.getTasks();

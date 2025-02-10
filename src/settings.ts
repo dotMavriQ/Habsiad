@@ -5,12 +5,14 @@ export interface ObsiticaSettings {
   habiticaUserId: string;
   habiticaApiToken: string;
   journalFolderName: string; // Added this line
+  customFrontmatter: { [key: string]: string };
 }
 
 export const DEFAULT_SETTINGS: ObsiticaSettings = {
   habiticaUserId: "",
   habiticaApiToken: "",
   journalFolderName: "Journal", // Added this line
+  customFrontmatter: {},
 };
 
 export class ObsiticaSettingTab extends PluginSettingTab {
