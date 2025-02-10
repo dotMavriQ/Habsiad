@@ -151,13 +151,25 @@ export class SidebarView extends ItemView {
   private displayInfoTab(container: HTMLElement) {
     const infoSection = container.createDiv("obsitica-info-section");
     infoSection.createEl("h3", { text: "Obsitica Plugin" });
+
+    // Dynamically fetch version from manifest.json
     const pluginVersion = this.plugin.manifest.version;
     infoSection.createEl("p", { text: `Version: ${pluginVersion}` });
+
     infoSection.createEl("h4", { text: "Available Shortcuts" });
+
     const shortcutsList = infoSection.createEl("ul");
+
+    // Existing Habitica command
     shortcutsList.createEl("li", {
       text: "Generate Habits & Dailies: Ctrl+Shift+H",
     });
+
+    // New Replace {WEEKDAY} command
+    shortcutsList.createEl("li", {
+      text: "Replace {WEEKDAY} with Actual Day: Ctrl+Shift+D",
+    });
+
     infoSection.createEl("hr");
     infoSection.createEl("p", { text: "Thank you for using Obsitica!" });
   }

@@ -41,7 +41,7 @@ export default class ObsiticaPlugin extends Plugin {
       this.activateSidebar();
     });
 
-    // Register the command
+    // Register Habitica command
     this.addCommand({
       id: "generate-habits-and-dailies",
       name: "Generate Habits & Dailies",
@@ -53,6 +53,31 @@ export default class ObsiticaPlugin extends Plugin {
         },
       ],
     });
+
+    // Register the command to replace {WEEKDAY} with the correct day (Manual Trigger)
+    this.addCommand({
+      id: "replace-weekday",
+      name: "Replace {WEEKDAY} with Actual Day",
+      callback: () => this.replaceWeekday(),
+      hotkeys: [
+        {
+          modifiers: ["Mod", "Shift"],
+          key: "D",
+        },
+      ],
+    });
+
+    // Automatically replace {WEEKDAY} when a new file is created in the JOURNAL folder
+    this.registerEvent(
+      this.app.vault.on("create", (file) => {
+        if (!(file instanceof TFile)) return;
+
+        const journalFolderName = this.settings.journalFolderName || "Journal";
+        if (file.path.startsWith(`${journalFolderName}/`)) {
+          this.replaceWeekday(file);
+        }
+      })
+    );
   }
 
   onunload() {
@@ -154,15 +179,23 @@ export default class ObsiticaPlugin extends Plugin {
       console.error("Error fetching Habitica tasks:", error);
     }
   }
-
+  /**
+   * Updates the "steps" field inside the frontmatter of a journal entry.
+   * If frontmatter exists, modifies the "steps" field.
+   * If frontmatter is missing, adds it to the file.
+   */
   async updateStepsFrontmatter(file: TFile, newSteps: string) {
-    const content = await this.app.vault.read(file);
+    let content = await this.app.vault.read(file);
+
+    // Locate frontmatter section
     const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
     const match = content.match(frontmatterRegex);
     let newContent;
 
     if (match) {
       const frontmatterText = match[1];
+
+      // Modify the "steps" value or insert if not found
       const updatedFrontmatter = frontmatterText
         .split("\n")
         .map((line) =>
@@ -175,9 +208,71 @@ export default class ObsiticaPlugin extends Plugin {
         `---\n${updatedFrontmatter}\n---`
       );
     } else {
+      // If no frontmatter exists, create it
       newContent = `---\nsteps: ${newSteps}\n---\n\n${content}`;
     }
 
+    // Save the updated file
     await this.app.vault.modify(file, newContent);
+  }
+
+  /**
+   * Replaces {WEEKDAY} with the actual day of the week based on the filename.
+   * Runs manually (via command) or automatically when a new file is created.
+   */
+  async replaceWeekday(file?: TFile) {
+    // Get the active file if no specific file is passed
+    if (!file) {
+      const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+      file = activeView?.file ?? undefined;
+    }
+
+    // Ensure a valid TFile is provided
+    if (!file) {
+      new Notice("Please open a journal entry.");
+      return;
+    }
+
+    // Check if the file matches the expected yyyy-mm-dd.md pattern
+    const fileName = file.name;
+    const match = fileName.match(/^(\d{4})-(\d{2})-(\d{2})\.md$/);
+    if (!match) {
+      new Notice("This is not a valid journal file.");
+      return;
+    }
+
+    const [_, year, month, day] = match;
+    const date = new Date(`${year}-${month}-${day}`);
+    const weekday = date
+      .toLocaleDateString("en-US", { weekday: "long" })
+      .toUpperCase();
+
+    // Read the file's content
+    let content = await this.app.vault.read(file);
+
+    // Handle frontmatter: Find where it ends (after the second "---")
+    const frontmatterEnd = content.indexOf("---", 3); // Find the second "---"
+    const bodyStartIndex = frontmatterEnd !== -1 ? frontmatterEnd + 3 : 0; // Skip past "---\n"
+    const bodyContent = content.slice(bodyStartIndex);
+
+    // Replace "# {WEEKDAY}" with the actual weekday
+    const updatedBodyContent = bodyContent.replace(
+      /^# \{WEEKDAY\}/m,
+      `# ${weekday}`
+    );
+
+    // If no changes were made, notify the user and return
+    if (bodyContent === updatedBodyContent) {
+      new Notice("No changes were made; # {WEEKDAY} not found.");
+      return;
+    }
+
+    // Reassemble the content (frontmatter + updated body)
+    const updatedContent =
+      content.slice(0, bodyStartIndex) + updatedBodyContent;
+
+    // Save the updated content back to the file
+    await this.app.vault.modify(file, updatedContent);
+    new Notice(`Updated {WEEKDAY} to ${weekday}`);
   }
 }
