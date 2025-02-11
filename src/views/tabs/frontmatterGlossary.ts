@@ -35,13 +35,14 @@ export function displayGlossaryTable(
     const input = nameCell.createEl("input", {
       type: "text",
       placeholder: "Enter custom name",
+      value: plugin.getCustomFrontmatterName(key),
     });
 
     // Save user input persistently
-    input.addEventListener("change", async () => {
+    input.addEventListener("change", () => {
       const userValue = input.value.trim();
       console.log(`Saving custom name for "${key}":`, userValue);
-      await plugin.saveCustomFrontmatterName(key, userValue); // Add saving logic in the plugin class
+      plugin.saveCustomFrontmatterName(key, userValue); // Add saving logic in the plugin class
     });
 
     // Column B: Locked field displaying the frontmatter key

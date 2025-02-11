@@ -154,7 +154,7 @@ export default class ObsiticaPlugin extends Plugin {
     await this.saveSettings();
   }
 
-  async getCustomFrontmatterName(key: string): Promise<string> {
+  getCustomFrontmatterName(key: string): string {
     return this.settings.customFrontmatter?.[key] || "";
   }
 
