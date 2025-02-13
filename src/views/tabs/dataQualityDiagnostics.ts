@@ -20,7 +20,7 @@ export class DataQualityDiagnosticsView {
     // Table header
     const thead = table.createTHead();
     const headerRow = thead.insertRow();
-    ["DATE", "⭐"].forEach((text) => {
+    ["DATE", "⭐", "🔨"].forEach((text) => {
       const th = document.createElement("th");
       th.textContent = text;
       headerRow.appendChild(th);
@@ -35,7 +35,7 @@ export class DataQualityDiagnosticsView {
 
         const row = tbody.insertRow();
 
-        // Date Cell with Clickable Link
+        // Date Cell (Column A)
         const dateCell = row.insertCell();
         const dateLink = document.createElement("a");
         dateLink.textContent = file.basename.replace(".md", ""); // Display date only
@@ -48,7 +48,7 @@ export class DataQualityDiagnosticsView {
         };
         dateCell.appendChild(dateLink);
 
-        // Star Cell with Clickable Link
+        // Star Cell (Column B) - Checks for H5 Headers
         const h5Cell = row.insertCell();
         const h5Text = await this.extractH5Text(file);
         if (h5Text) {
@@ -63,6 +63,19 @@ export class DataQualityDiagnosticsView {
             this.app.workspace.openLinkText(file.path, "", true);
           };
           h5Cell.appendChild(starLink);
+        }
+
+        // Work Status Cell (Column C)
+        const workCell = row.insertCell();
+        const fileContent = await this.app.vault.read(file);
+        const hasWorkHeader = fileContent.includes("## WORK:");
+
+        if (hasWorkHeader) {
+          workCell.textContent = "🔨"; // Workday
+        } else if (h5Text) {
+          workCell.textContent = "😃"; // Vacation/Holiday
+        } else {
+          workCell.textContent = "😌"; // Weekend
         }
       }
     }
