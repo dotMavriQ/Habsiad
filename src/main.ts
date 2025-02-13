@@ -16,7 +16,7 @@ import {
 
 export default class ObsiticaPlugin extends Plugin {
   public habiticaService!: HabiticaService;
-  public settings!: ObsiticaSettings;
+  public settings: ObsiticaSettings = DEFAULT_SETTINGS; // ✅ Ensures initialization
 
   async onload() {
     console.log("Loading Obsitica Plugin");

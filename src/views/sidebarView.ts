@@ -2,6 +2,7 @@ import { ItemView, TFolder, TFile, WorkspaceLeaf } from "obsidian";
 import ObsiticaPlugin from "../main"; // Ensure the path matches your project structure
 
 import { displayGlossaryTable } from "./tabs/frontmatterGlossary";
+import { DataQualityDiagnosticsView } from "./tabs/dataQualityDiagnostics";
 
 export const VIEW_TYPE_SIDEBAR = "obsitica-sidebar-view";
 
@@ -86,6 +87,19 @@ export class SidebarView extends ItemView {
     }
   }
 
+  private async displayDiagnosticsTab(container: HTMLElement) {
+    const diagnosticsView = new DataQualityDiagnosticsView(
+      this.app,
+      this.plugin
+    );
+    const diagnosticsElement = await diagnosticsView.render();
+    container.appendChild(diagnosticsElement);
+  }
+
+  private displayGlossaryTab(container: HTMLElement) {
+    displayGlossaryTable(container, this.plugin);
+  }
+
   private displayStepsTab(container: HTMLElement) {
     const journalFolderName =
       this.plugin.settings.journalFolderName || "Journal";
@@ -103,7 +117,6 @@ export class SidebarView extends ItemView {
       (f) => f instanceof TFile && f.extension === "md"
     );
 
-    // Map filenames to dates and ensure strict sorting by the filenames
     const dateFileMap = files
       .map((file) => {
         const match = file.name.match(/^(\d{4})-(\d{2})-(\d{2})\.md$/); // Match YYYY-MM-DD.md
@@ -113,7 +126,6 @@ export class SidebarView extends ItemView {
       })
       .filter(Boolean) as { dateString: string; file: TFile }[];
 
-    // Sort by the date strings derived from filenames
     dateFileMap.sort((a, b) => {
       if (a.dateString < b.dateString) return -1;
       if (a.dateString > b.dateString) return 1;
@@ -134,7 +146,7 @@ export class SidebarView extends ItemView {
       const currentSteps = frontmatter?.steps ?? "";
 
       const row = tbody.createEl("tr");
-      row.createEl("td", { text: dateString.replace(/-/g, "/") }); // Display in YYYY/MM/DD format
+      row.createEl("td", { text: dateString.replace(/-/g, "/") });
 
       const stepsCell = row.createEl("td");
       const input = stepsCell.createEl("input", { type: "number" });
@@ -154,7 +166,6 @@ export class SidebarView extends ItemView {
     const infoSection = container.createDiv("obsitica-info-section");
     infoSection.createEl("h3", { text: "Obsitica Plugin" });
 
-    // Dynamically fetch version from manifest.json
     const pluginVersion = this.plugin.manifest.version;
     infoSection.createEl("p", { text: `Version: ${pluginVersion}` });
 
@@ -162,30 +173,15 @@ export class SidebarView extends ItemView {
 
     const shortcutsList = infoSection.createEl("ul");
 
-    // Existing Habitica command
     shortcutsList.createEl("li", {
       text: "Generate Habits & Dailies: Ctrl+Shift+H",
     });
 
-    // New Replace {WEEKDAY} command
     shortcutsList.createEl("li", {
       text: "Replace {WEEKDAY} with Actual Day: Ctrl+Shift+D",
     });
 
     infoSection.createEl("hr");
     infoSection.createEl("p", { text: "Thank you for using Obsitica!" });
-  }
-
-  private displayDiagnosticsTab(container: HTMLElement) {
-    container.createEl("p", {
-      text: "Data Quality Diagnostics will be implemented soon.",
-    });
-  }
-
-  private displayGlossaryTab(container: HTMLElement) {
-    displayGlossaryTable(container, this.plugin);
-    // container.createEl("p", {
-    //   text: "Frontmatter Glossary will be implemented soon.",
-    // });
   }
 }
