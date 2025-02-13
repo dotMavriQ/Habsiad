@@ -69,8 +69,16 @@ export class DataQualityDiagnosticsView {
         const workCell = row.insertCell();
         const fileContent = await this.app.vault.read(file);
         const hasWorkHeader = fileContent.includes("## WORK:");
+        const firstHeaderMatch = fileContent.match(/^# (.+)$/m);
+        const firstHeader = firstHeaderMatch
+          ? firstHeaderMatch[1].trim().toUpperCase()
+          : "";
+        const isWeekend =
+          firstHeader === "SATURDAY" || firstHeader === "SUNDAY";
 
-        if (hasWorkHeader) {
+        if (isWeekend && hasWorkHeader) {
+          workCell.textContent = "❌"; // Work logged on weekend
+        } else if (hasWorkHeader) {
           workCell.textContent = "🔨"; // Workday
         } else if (h5Text) {
           workCell.textContent = "😃"; // Vacation/Holiday
