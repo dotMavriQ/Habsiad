@@ -84,10 +84,10 @@ export class DataQualityDiagnosticsView {
           workCell.title = "Workday";
         } else if (h5Text) {
           workCell.textContent = "😃"; // Vacation/Holiday
-          workCell.title = "Vacation or holiday";
+          workCell.title = "Vacation or Holiday";
         } else {
-          workCell.textContent = "😌"; // Weekend
-          workCell.title = "Weekend";
+          workCell.textContent = "😌"; // Weekend/Not Working
+          workCell.title = "Weekend/Not Working";
         }
 
         // Work Summary & Completed Tasks (Column D)
