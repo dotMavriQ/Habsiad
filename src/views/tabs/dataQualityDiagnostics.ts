@@ -20,7 +20,7 @@ export class DataQualityDiagnosticsView {
     // Table header
     const thead = table.createTHead();
     const headerRow = thead.insertRow();
-    ["DATE", "⭐", "🔨"].forEach((text) => {
+    ["DATE", "⭐", "🔨", "🛠️"].forEach((text) => {
       const th = document.createElement("th");
       th.textContent = text;
       headerRow.appendChild(th);
@@ -34,6 +34,7 @@ export class DataQualityDiagnosticsView {
         if (!(file instanceof TFile)) continue; // Ensure it's a file
 
         const row = tbody.insertRow();
+        const fileContent = await this.app.vault.read(file);
 
         // Date Cell (Column A)
         const dateCell = row.insertCell();
@@ -67,7 +68,6 @@ export class DataQualityDiagnosticsView {
 
         // Work Status Cell (Column C)
         const workCell = row.insertCell();
-        const fileContent = await this.app.vault.read(file);
         const hasWorkHeader = fileContent.includes("## WORK:");
         const firstHeaderMatch = fileContent.match(/^# (.+)$/m);
         const firstHeader = firstHeaderMatch
@@ -78,12 +78,57 @@ export class DataQualityDiagnosticsView {
 
         if (isWeekend && hasWorkHeader) {
           workCell.textContent = "❌"; // Work logged on weekend
+          workCell.title = "Work logged on a weekend";
         } else if (hasWorkHeader) {
           workCell.textContent = "🔨"; // Workday
+          workCell.title = "Workday";
         } else if (h5Text) {
           workCell.textContent = "😃"; // Vacation/Holiday
+          workCell.title = "Vacation or holiday";
         } else {
           workCell.textContent = "😌"; // Weekend
+          workCell.title = "Weekend";
+        }
+
+        // Work Summary & Completed Tasks (Column D)
+        const workSummaryCell = row.insertCell();
+        if (!hasWorkHeader) {
+          workSummaryCell.textContent = "😌"; // No work header, skip further checks
+          workSummaryCell.title = "No work logged";
+        } else {
+          // Extract text between "###### Summary:" and "### Goals for Today:"
+          const summaryMatch = fileContent.match(
+            /###### Summary:\n([\s\S]*?)\n### Goals for Today:/
+          );
+          const summaryText = summaryMatch ? summaryMatch[1].trim() : "";
+          const wordCount = summaryText ? summaryText.split(/\s+/).length : 0;
+          let summaryIndicator = "❌";
+          let summaryTooltip = "Incomplete Summary";
+
+          if (wordCount > 60) {
+            summaryIndicator = "✅";
+            summaryTooltip = "Completed Summary";
+          } else if (wordCount > 0) {
+            summaryIndicator = "❗";
+            summaryTooltip = "Insufficient Summary";
+          }
+
+          // Extract text between "### Goals for Today:" and "## LIFE:"
+          const goalsMatch = fileContent.match(
+            /### Goals for Today:\n([\s\S]*?)\n## LIFE:/
+          );
+          const goalsText = goalsMatch ? goalsMatch[1].trim() : "";
+          const completedTasks = (goalsText.match(/- \[x\]/g) || []).length;
+          let goalsIndicator = "❌";
+          let goalsTooltip = "No goals in place";
+
+          if (completedTasks > 0) {
+            goalsIndicator = `<b>${completedTasks}</b>`; // Proper HTML bold formatting
+            goalsTooltip = `${completedTasks} completed tasks`;
+          }
+
+          workSummaryCell.innerHTML = `${summaryIndicator}, ${goalsIndicator}`;
+          workSummaryCell.title = `${summaryTooltip}, ${goalsTooltip}`;
         }
       }
     }
