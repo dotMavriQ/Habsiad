@@ -17,10 +17,11 @@ export class DataQualityDiagnosticsView {
     const table = document.createElement("table");
     table.classList.add("obsitica-diagnostics-table");
 
-    // Table header
+    // Table header (refactored to include 📗 in the array)
     const thead = table.createTHead();
     const headerRow = thead.insertRow();
-    ["DATE", "⭐", "🔨", "🛠️", "🥗"].forEach((text) => {
+    ["DATE", "⭐", "🔨", "🛠️", "🥗", "📗"].forEach((text) => {
+      /* Added F-Column header here */
       const th = document.createElement("th");
       th.textContent = text;
       headerRow.appendChild(th);
@@ -190,6 +191,49 @@ export class DataQualityDiagnosticsView {
         emojiSpan.style.cursor = "pointer";
         emojiSpan.title = `Total calories: ${totalCalories}`;
         foodCell.appendChild(emojiSpan);
+
+        // F-Column Logic (Column F)
+        const fCell = row.insertCell();
+        // Extract the TODO section from the file content:
+        // It matches "### TODO:" and captures text until the next header (line starting with "###") or end-of-file.
+        const todoMatch = fileContent.match(
+          /### TODO:\s*([\s\S]*?)(?=\n###|$)/
+        );
+        const todoSection = todoMatch ? todoMatch[1].trim() : "";
+        const todoLines = todoSection
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line !== "");
+        const templateTasks = ["- [ ] Task 1", "- [ ] Task 2", "- [ ] Task 3"];
+        const isTemplate =
+          todoLines.length === templateTasks.length &&
+          templateTasks.every((task, i) => todoLines[i] === task);
+        const isEmpty = todoLines.length === 0;
+
+        if (isEmpty || isTemplate) {
+          fCell.textContent = "❌";
+          fCell.title =
+            "No updates: Only template tasks or empty TODO section.";
+        } else {
+          const uncheckedTasks = todoLines.filter((line) =>
+            line.startsWith("- [ ]")
+          );
+          // Use the file's basename as the journal date
+          const journalDate = file.basename.replace(".md", "");
+          const currentDate = new Date().toISOString().split("T")[0];
+
+          if (journalDate !== currentDate && uncheckedTasks.length > 0) {
+            fCell.textContent = "❗";
+            fCell.title = "Warning: Incomplete tasks from a previous day.";
+          } else {
+            const checkedTasks = todoLines.filter((line) =>
+              /^- \[[xX]\]/.test(line)
+            );
+            const count = checkedTasks.length;
+            fCell.innerHTML = `<b>${count}</b>`;
+            fCell.title = `TODO-tasks cleared: ${count}`;
+          }
+        }
       }
     }
 
