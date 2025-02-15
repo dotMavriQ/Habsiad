@@ -17,31 +17,38 @@ export class DataQualityDiagnosticsView {
     const table = document.createElement("table");
     table.classList.add("obsitica-diagnostics-table");
 
-    // Table header (refactored to include 📗 and 📘 in the array)
+    // Table header with 8 columns: DATE, ⭐, 🔨, 🛠️, 🥗, 📗, 📘, 📙
     const thead = table.createTHead();
     const headerRow = thead.insertRow();
-    ["DATE", "⭐", "🔨", "🛠️", "🥗", "📗", "📘" /* G-column header */].forEach(
-      (text) => {
-        const th = document.createElement("th");
-        th.textContent = text;
-        headerRow.appendChild(th);
-      }
-    );
+    [
+      "DATE",
+      "⭐",
+      "🔨",
+      "🛠️",
+      "🥗",
+      "📗", // TODO
+      "📘", // Reflections
+      "📙", // Achievements & Dailies
+    ].forEach((text) => {
+      const th = document.createElement("th");
+      th.textContent = text;
+      headerRow.appendChild(th);
+    });
 
     const tbody = table.createTBody();
     const journalFolder = this.getJournalFolder();
     if (journalFolder) {
       const files = this.getJournalFiles(journalFolder);
       for (const file of files) {
-        if (!(file instanceof TFile)) continue; // Ensure it's a file
+        if (!(file instanceof TFile)) continue;
 
         const row = tbody.insertRow();
         const fileContent = await this.app.vault.read(file);
 
-        // Date Cell (Column A)
+        // Column A: Date
         const dateCell = row.insertCell();
         const dateLink = document.createElement("a");
-        dateLink.textContent = file.basename.replace(".md", ""); // Display date only
+        dateLink.textContent = file.basename.replace(".md", "");
         dateLink.href = "#";
         dateLink.style.textDecoration = "none";
         dateLink.style.color = "inherit";
@@ -51,14 +58,14 @@ export class DataQualityDiagnosticsView {
         };
         dateCell.appendChild(dateLink);
 
-        // Star Cell (Column B) - Checks for H5 Headers
+        // Column B: Star (H5 headers)
         const h5Cell = row.insertCell();
         const h5Text = await this.extractH5Text(file);
         if (h5Text) {
           const starLink = document.createElement("a");
           starLink.textContent = "⭐";
           starLink.href = "#";
-          starLink.title = h5Text; // Tooltip with extracted H5 content
+          starLink.title = h5Text;
           starLink.style.textDecoration = "none";
           starLink.style.cursor = "pointer";
           starLink.onclick = (e) => {
@@ -68,7 +75,7 @@ export class DataQualityDiagnosticsView {
           h5Cell.appendChild(starLink);
         }
 
-        // Work Status Cell (Column C)
+        // Column C: Work Status
         const workCell = row.insertCell();
         const hasWorkHeader = fileContent.includes("## WORK:");
         const firstHeaderMatch = fileContent.match(/^# (.+)$/m);
@@ -92,7 +99,7 @@ export class DataQualityDiagnosticsView {
           workCell.title = "Weekend";
         }
 
-        // Work Summary & Completed Tasks (Column D)
+        // Column D: Work Summary & Completed Tasks
         const workSummaryCell = row.insertCell();
         if (!hasWorkHeader) {
           workSummaryCell.textContent = "😌";
@@ -131,72 +138,52 @@ export class DataQualityDiagnosticsView {
           workSummaryCell.title = `${summaryTooltip}, ${goalsTooltip}`;
         }
 
-        // Food Tracking (Column E) - Plugin Version (modified)
+        // Column E: Food Tracking
         const foodCell = row.insertCell();
         let mealCount = 0;
         let totalCalories = 0;
-
-        // Read file content for Obsidian
         const foodLines = fileContent.split("\n");
-        // Use a regex to catch any header that ends with "FOOD:" (e.g. ### FOOD: or #### FOOD:)
         const foodIndex = foodLines.findIndex((line) =>
           /^#+\s*FOOD:$/i.test(line.trim())
         );
 
         if (foodIndex !== -1 && foodIndex + 3 < foodLines.length) {
-          let currentLineIndex = foodIndex + 3; // Move to the first meal row
-
+          let currentLineIndex = foodIndex + 3;
           for (const mealType of ["Breakfast", "Lunch", "Dinner", "Snacks"]) {
-            if (currentLineIndex >= foodLines.length) break; // Stop if out of bounds
-
+            if (currentLineIndex >= foodLines.length) break;
             const mealRow = foodLines[currentLineIndex];
             if (!mealRow.includes("|")) {
               currentLineIndex++;
               continue;
             }
-
-            // **Step 1: Split and normalize the row**
             let columns = mealRow.split("|").map((col) => col.trim());
-            // Remove empty leading/trailing elements if present.
             if (columns[0] === "") {
               columns.shift();
             }
             if (columns[columns.length - 1] === "") {
               columns.pop();
             }
-            // Now the expected structure is: [MEAL, MEAL CONTENT, EST.CALORIES]
-
-            // **Step 2: Process the row if it matches the expected meal type**
             if (columns.length >= 3 && columns[0] === mealType) {
-              // Count the meal if the MEAL CONTENT cell is non-empty.
               if (columns[1].length > 0) {
                 mealCount++;
               }
-              // Sum calories if the EST.CALORIES cell contains a valid number.
               if (/^\d+$/.test(columns[2])) {
                 totalCalories += parseInt(columns[2], 10);
               }
             }
-
-            currentLineIndex++; // Move to the next row
+            currentLineIndex++;
           }
         }
-
-        // **Step 3: Choose the appropriate emoji based on meal count**
         const mealEmojis = ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣"];
         const displayEmoji = mealEmojis[Math.min(mealCount, 4)];
-
-        // **Step 4: Create the emoji element with tooltip and insert it**
         const emojiSpan = document.createElement("span");
         emojiSpan.textContent = displayEmoji;
         emojiSpan.style.cursor = "pointer";
         emojiSpan.title = `Total calories: ${totalCalories}`;
         foodCell.appendChild(emojiSpan);
 
-        // F-Column Logic (Column F)
+        // Column F: TODO Section
         const fCell = row.insertCell();
-        // Extract the TODO section from the file content:
-        // It matches "### TODO:" and captures text until the next header (line starting with "###") or end-of-file.
         const todoMatch = fileContent.match(
           /### TODO:\s*([\s\S]*?)(?=\n###|$)/
         );
@@ -210,7 +197,6 @@ export class DataQualityDiagnosticsView {
           todoLines.length === templateTasks.length &&
           templateTasks.every((task, i) => todoLines[i] === task);
         const isEmpty = todoLines.length === 0;
-
         if (isEmpty || isTemplate) {
           fCell.textContent = "❌";
           fCell.title =
@@ -219,10 +205,8 @@ export class DataQualityDiagnosticsView {
           const uncheckedTasks = todoLines.filter((line) =>
             line.startsWith("- [ ]")
           );
-          // Use the file's basename as the journal date
           const journalDate = file.basename.replace(".md", "");
           const currentDate = new Date().toISOString().split("T")[0];
-
           if (journalDate !== currentDate && uncheckedTasks.length > 0) {
             fCell.textContent = "❗";
             fCell.title = "Warning: Incomplete tasks from a previous day.";
@@ -236,13 +220,11 @@ export class DataQualityDiagnosticsView {
           }
         }
 
-        // G-Column Logic (Column G: Reflections)
+        // Column G: Reflections
         const gCell = row.insertCell();
         let reflectionsSection = "";
-        // Check if an Achievements header exists
         const achievementsHeaderMatch = fileContent.match(/\n## Achievements/);
         if (achievementsHeaderMatch) {
-          // If Achievements header exists, extract text between Reflections and Achievements.
           const reflectionsMatch = fileContent.match(
             /### Reflections:\s*([\s\S]*?)(?=\n## Achievements)/
           );
@@ -250,7 +232,6 @@ export class DataQualityDiagnosticsView {
             ? reflectionsMatch[1].trim()
             : "";
         } else {
-          // If no Achievements header, use the content from Reflections until EOF.
           const reflectionsStartMatch = fileContent.match(
             /### Reflections:\s*([\s\S]*)/
           );
@@ -265,7 +246,7 @@ export class DataQualityDiagnosticsView {
         const bulletLines = reflectionLines.filter((line) =>
           line.startsWith("- ")
         );
-        // Use a regex to detect a template bullet (ignoring minor differences)
+        // Use regex to match a template bullet (allowing minor variations)
         const templatePattern = /- Thoughts or notes about personal life/i;
         if (
           bulletLines.length === 0 ||
@@ -277,6 +258,37 @@ export class DataQualityDiagnosticsView {
           gCell.innerHTML = `<b>${bulletLines.length}</b>`;
           gCell.title = `Amount of reflections: ${bulletLines.length}`;
         }
+
+        // Column H: Achievements & Dailies
+        const hColCell = row.insertCell();
+        // Regexes to extract Achievements and Completed Dailies sections.
+        const achievementsRegex =
+          /## Achievements on\s+([0-9]{4}-[0-9]{2}-[0-9]{2})([\s\S]*?)(?=\n## Completed Dailies)/;
+        const dailiesRegex = /## Completed Dailies\s*([\s\S]*)/;
+        const achievementsMatch = fileContent.match(achievementsRegex);
+        const dailiesMatch = fileContent.match(dailiesRegex);
+        if (!achievementsMatch || !dailiesMatch) {
+          hColCell.textContent = "❌";
+          hColCell.title = "Achievements & Dailies not found";
+        } else {
+          const achievementsDate = achievementsMatch[1].trim();
+          const fileDate = file.basename.replace(".md", "");
+          if (achievementsDate !== fileDate) {
+            hColCell.textContent = "❗";
+            hColCell.title = "incorrect date set";
+          } else {
+            // Count habit lines in the Achievements section.
+            const achievementsText = achievementsMatch[2];
+            const habitLines =
+              achievementsText.match(/^\* Habit clicked:/gm) || [];
+            // Count daily lines in Completed Dailies (lines starting with "* " but not habit lines).
+            const dailiesText = dailiesMatch[1];
+            const dailyLines =
+              dailiesText.match(/^\* (?!Habit clicked:)/gm) || [];
+            hColCell.innerHTML = `<b>${habitLines.length}, ${dailyLines.length}</b>`;
+            hColCell.title = `Habits: ${habitLines.length}, Dailies: ${dailyLines.length}`;
+          }
+        }
       }
     }
 
@@ -285,28 +297,26 @@ export class DataQualityDiagnosticsView {
   }
 
   private getJournalFolder(): TFolder | null {
-    const folderName = this.plugin.settings.journalFolderName || "Journal"; // Use dynamic folder name from settings
+    const folderName = this.plugin.settings.journalFolderName || "Journal";
     const folder = this.app.vault.getAbstractFileByPath(folderName);
     return folder instanceof TFolder ? folder : null;
   }
 
   private getJournalFiles(folder: TFolder): TFile[] {
     return folder.children
-      .filter((f) => f instanceof TFile && f.extension === "md") // Ensure only TFiles
-      .map((f) => f as TFile) // Cast safely
-      .sort((a, b) => a.basename.localeCompare(b.basename)); // Sort by filename
+      .filter((f) => f instanceof TFile && f.extension === "md")
+      .map((f) => f as TFile)
+      .sort((a, b) => a.basename.localeCompare(b.basename));
   }
 
   private async extractH5Text(file: TFile): Promise<string | null> {
     const content = await this.app.vault.read(file);
     const match = content.match(/# .+?\n([\s\S]*?)\n## LIFE:/);
     if (!match) return null;
-
     const h5Lines = match[1]
       .split("\n")
-      .filter((line) => line.startsWith("##### ") && !line.startsWith("######")) // Ensure exactly 5 hashes
-      .map((line) => line.replace("##### ", "").trim()); // Remove the hashes for tooltip text
-
+      .filter((line) => line.startsWith("##### ") && !line.startsWith("######"))
+      .map((line) => line.replace("##### ", "").trim());
     return h5Lines.length > 0 ? h5Lines.join(" ") : null;
   }
 }
