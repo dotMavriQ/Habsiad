@@ -17,15 +17,16 @@ export class DataQualityDiagnosticsView {
     const table = document.createElement("table");
     table.classList.add("obsitica-diagnostics-table");
 
-    // Table header (refactored to include 📗 in the array)
+    // Table header (refactored to include 📗 and 📘 in the array)
     const thead = table.createTHead();
     const headerRow = thead.insertRow();
-    ["DATE", "⭐", "🔨", "🛠️", "🥗", "📗"].forEach((text) => {
-      /* Added F-Column header here */
-      const th = document.createElement("th");
-      th.textContent = text;
-      headerRow.appendChild(th);
-    });
+    ["DATE", "⭐", "🔨", "🛠️", "🥗", "📗", "📘" /* G-column header */].forEach(
+      (text) => {
+        const th = document.createElement("th");
+        th.textContent = text;
+        headerRow.appendChild(th);
+      }
+    );
 
     const tbody = table.createTBody();
     const journalFolder = this.getJournalFolder();
@@ -231,8 +232,50 @@ export class DataQualityDiagnosticsView {
             );
             const count = checkedTasks.length;
             fCell.innerHTML = `<b>${count}</b>`;
-            fCell.title = `TODO-tasks cleared: ${count}`;
+            fCell.title = `Amount of TODO-tasks cleared: ${count}`;
           }
+        }
+
+        // G-Column Logic (Column G: Reflections)
+        const gCell = row.insertCell();
+        let reflectionsSection = "";
+        // Check if an Achievements header exists
+        const achievementsHeaderMatch = fileContent.match(/\n## Achievements/);
+        if (achievementsHeaderMatch) {
+          // If Achievements header exists, extract text between Reflections and Achievements.
+          const reflectionsMatch = fileContent.match(
+            /### Reflections:\s*([\s\S]*?)(?=\n## Achievements)/
+          );
+          reflectionsSection = reflectionsMatch
+            ? reflectionsMatch[1].trim()
+            : "";
+        } else {
+          // If no Achievements header, use the content from Reflections until EOF.
+          const reflectionsStartMatch = fileContent.match(
+            /### Reflections:\s*([\s\S]*)/
+          );
+          reflectionsSection = reflectionsStartMatch
+            ? reflectionsStartMatch[1].trim()
+            : "";
+        }
+        const reflectionLines = reflectionsSection
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line !== "");
+        const bulletLines = reflectionLines.filter((line) =>
+          line.startsWith("- ")
+        );
+        // Use a regex to detect a template bullet (ignoring minor differences)
+        const templatePattern = /- Thoughts or notes about personal life/i;
+        if (
+          bulletLines.length === 0 ||
+          (bulletLines.length === 1 && templatePattern.test(bulletLines[0]))
+        ) {
+          gCell.textContent = "❌";
+          gCell.title = "no Reflections found";
+        } else {
+          gCell.innerHTML = `<b>${bulletLines.length}</b>`;
+          gCell.title = `Amount of reflections: ${bulletLines.length}`;
         }
       }
     }
