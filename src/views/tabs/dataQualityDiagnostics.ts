@@ -20,7 +20,7 @@ export class DataQualityDiagnosticsView {
     // Table header
     const thead = table.createTHead();
     const headerRow = thead.insertRow();
-    ["DATE", "⭐", "🔨", "🛠️"].forEach((text) => {
+    ["DATE", "⭐", "🔨", "🛠️", "🥗"].forEach((text) => {
       const th = document.createElement("th");
       th.textContent = text;
       headerRow.appendChild(th);
@@ -77,26 +77,25 @@ export class DataQualityDiagnosticsView {
           firstHeader === "SATURDAY" || firstHeader === "SUNDAY";
 
         if (isWeekend && hasWorkHeader) {
-          workCell.textContent = "❌"; // Work logged on weekend
+          workCell.textContent = "❌";
           workCell.title = "Work logged on a weekend";
         } else if (hasWorkHeader) {
-          workCell.textContent = "🔨"; // Workday
+          workCell.textContent = "🔨";
           workCell.title = "Workday";
         } else if (h5Text) {
-          workCell.textContent = "😃"; // Vacation/Holiday
-          workCell.title = "Vacation or Holiday";
+          workCell.textContent = "😃";
+          workCell.title = "Vacation or holiday";
         } else {
-          workCell.textContent = "😌"; // Weekend/Not Working
-          workCell.title = "Weekend/Not Working";
+          workCell.textContent = "😌";
+          workCell.title = "Weekend";
         }
 
         // Work Summary & Completed Tasks (Column D)
         const workSummaryCell = row.insertCell();
         if (!hasWorkHeader) {
-          workSummaryCell.textContent = "😌"; // No work header, skip further checks
+          workSummaryCell.textContent = "😌";
           workSummaryCell.title = "No work logged";
         } else {
-          // Extract text between "###### Summary:" and "### Goals for Today:"
           const summaryMatch = fileContent.match(
             /###### Summary:\n([\s\S]*?)\n### Goals for Today:/
           );
@@ -113,7 +112,6 @@ export class DataQualityDiagnosticsView {
             summaryTooltip = "Insufficient Summary";
           }
 
-          // Extract text between "### Goals for Today:" and "## LIFE:"
           const goalsMatch = fileContent.match(
             /### Goals for Today:\n([\s\S]*?)\n## LIFE:/
           );
@@ -123,13 +121,75 @@ export class DataQualityDiagnosticsView {
           let goalsTooltip = "No goals in place";
 
           if (completedTasks > 0) {
-            goalsIndicator = `<b>${completedTasks}</b>`; // Proper HTML bold formatting
+            goalsIndicator = `<b>${completedTasks}</b>`;
             goalsTooltip = `${completedTasks} completed tasks`;
           }
 
           workSummaryCell.innerHTML = `${summaryIndicator}, ${goalsIndicator}`;
           workSummaryCell.title = `${summaryTooltip}, ${goalsTooltip}`;
         }
+
+        // Food Tracking (Column E) - Plugin Version (modified)
+        const foodCell = row.insertCell();
+        let mealCount = 0;
+        let totalCalories = 0;
+
+        // Read file content for Obsidian
+        const foodLines = fileContent.split("\n");
+        // Use a regex to catch any header that ends with "FOOD:" (e.g. ### FOOD: or #### FOOD:)
+        const foodIndex = foodLines.findIndex((line) =>
+          /^#+\s*FOOD:$/i.test(line.trim())
+        );
+
+        if (foodIndex !== -1 && foodIndex + 3 < foodLines.length) {
+          let currentLineIndex = foodIndex + 3; // Move to the first meal row
+
+          for (const mealType of ["Breakfast", "Lunch", "Dinner", "Snacks"]) {
+            if (currentLineIndex >= foodLines.length) break; // Stop if out of bounds
+
+            const mealRow = foodLines[currentLineIndex];
+            if (!mealRow.includes("|")) {
+              currentLineIndex++;
+              continue;
+            }
+
+            // **Step 1: Split and normalize the row**
+            let columns = mealRow.split("|").map((col) => col.trim());
+            // Remove empty leading/trailing elements if present.
+            if (columns[0] === "") {
+              columns.shift();
+            }
+            if (columns[columns.length - 1] === "") {
+              columns.pop();
+            }
+            // Now the expected structure is: [MEAL, MEAL CONTENT, EST.CALORIES]
+
+            // **Step 2: Process the row if it matches the expected meal type**
+            if (columns.length >= 3 && columns[0] === mealType) {
+              // Count the meal if the MEAL CONTENT cell is non-empty.
+              if (columns[1].length > 0) {
+                mealCount++;
+              }
+              // Sum calories if the EST.CALORIES cell contains a valid number.
+              if (/^\d+$/.test(columns[2])) {
+                totalCalories += parseInt(columns[2], 10);
+              }
+            }
+
+            currentLineIndex++; // Move to the next row
+          }
+        }
+
+        // **Step 3: Choose the appropriate emoji based on meal count**
+        const mealEmojis = ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣"];
+        const displayEmoji = mealEmojis[Math.min(mealCount, 4)];
+
+        // **Step 4: Create the emoji element with tooltip and insert it**
+        const emojiSpan = document.createElement("span");
+        emojiSpan.textContent = displayEmoji;
+        emojiSpan.style.cursor = "pointer";
+        emojiSpan.title = `Total calories: ${totalCalories}`;
+        foodCell.appendChild(emojiSpan);
       }
     }
 
