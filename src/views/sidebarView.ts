@@ -23,7 +23,7 @@ export class SidebarView extends ItemView {
   }
 
   getIcon() {
-    return "calendar-with-checkmark"; // Use a suitable icon
+    return "diamond"; // Use a suitable icon
   }
 
   async onOpen() {
@@ -32,10 +32,10 @@ export class SidebarView extends ItemView {
 
     const tabContainer = container.createDiv("obsitica-tab-container");
     const tabs = [
-      { emoji: "ℹ️", view: "info" },
+      { emoji: "🏡", view: "info" },
       { emoji: "🔎", view: "diagnostics" },
       { emoji: "⬆️", view: "glossary" },
-      { emoji: "👟", view: "steps" }, // Added Steps tab
+      { emoji: "👟", view: "steps" },
     ];
 
     tabs.forEach((tab) => {
