@@ -74,7 +74,7 @@ Because Obsitica tries to take wonderful and modular approaches and the simplici
 
 Obsitica has now entered version `0.8.6` 
 
-We are getting ever closer to `1.0` 
+We are getting ever closer to `1.0.0` 
 
 **Here is a list of everything that Obsitica already allows you to do:** 
 
