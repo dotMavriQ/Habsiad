@@ -56,6 +56,6 @@ As of the end of October 2024, Obsitica has reached a stage where it can provide
 
   ```bash
   npm install
-
+  ```
 
   <sub><sup>shoutouts to the bold and brave people with decked out [emacs ORG-mode](https://orgmode.org/) setups and people writing maniacal scripts around their [Joplin](https://joplinapp.org/) notes. We are not the same but we can share the fireplace, no doubt</sub></sup>
