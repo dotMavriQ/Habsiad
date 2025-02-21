@@ -24,7 +24,7 @@ Linking between documents, searching text across all files or folders, setting u
 
 The modularity also means that as long as you find an approach that you are comfortable with, you can reduce your cognitive load by not having several parts of yourself or your work or interest placed in several files in several folders on several apps.  
 
-Obsidian may well be the ruling application of its kind. Certainly the one with the most popular use.
+Obsidian may well be the ruling application of its kind. Certainly the most popular of its kind.
 
 **A short set of arguments as to why follows below:**
 * While not open-source, it still has **too many good features** over open-source competitors like [Logseq](https://logseq.com/).
