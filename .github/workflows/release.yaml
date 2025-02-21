@@ -27,7 +27,8 @@ jobs:
         run: zip plugin-release.zip main.js manifest.json styles.css
 
       - name: Create GitHub Release
-        id: create_release
-        uses: actions/action-gh-release@v2
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: plugin-release.zip
+          files: |
+            plugin-release.zip
