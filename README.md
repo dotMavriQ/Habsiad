@@ -102,5 +102,6 @@ Please feel free to try this plugin!
 
 dotMavriQ will eagerly answer any pending questions either on GitHub or via [email](mailto:obsitica+dotmavriq@gmail.com)
 
-And if you like the idea, or better yet, benefit from the plugin, please feel free to contribute:
+And if you like the idea, or better yet, benefit from the plugin, please feel free to donate:
+
 <noscript><a href="https://liberapay.com/dotMavriQ/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
