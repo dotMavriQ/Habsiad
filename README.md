@@ -46,7 +46,7 @@ Habitica is still contending to be the single most permissive and modular habit 
 #### Why Obsitica? 
 Well... The Obsidian + Habitica stack, with all of its strengths, still has some flaws.
 
-- **Obsidian can't indirectly interact with Habitica**. Someone has made [a plugin prior to Obsitica](obsidian://show-plugin?id=obsidian-habitica-integration), but the plugin is essentially none more than a web view of Habitica itself, avaible to be viewed from within Obsidian. Which is fine for a lot of people I bet... but it doesn't solve my single biggest problem:
+- **Obsidian can't indirectly interact with Habitica**. Someone has made [a plugin prior to Obsitica](https://github.com/SuperChamp234/habitica-sync), but the plugin is essentially none more than a web view of Habitica itself, avaible to be viewed from within Obsidian. Which is fine for a lot of people I bet... but it doesn't solve my single biggest problem:
 - **Habitica does not store your tracked Habits, Dailies and TODO's in any meaningful way** - Yeah, you read that right. So... it's effective with its UI and gamification... but unless you're happy with looking at streak numbers for individual Habits, Dailies... or looking through your archived TODO's...you have no means of evaluating your work... or your progress over time, not unless you do your own data entry or toil with notebooks.
 
 So what if we could leverage the fact that we can make calls to the Habitica API so that we can store our achieved Habits, Dailies and TODO's and then graph progress over time? 
