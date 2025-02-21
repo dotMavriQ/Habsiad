@@ -83,7 +83,7 @@ We are getting ever closer to `1.0`
 - **Frontmatter Glossary** - Reads the Frontmatter Keys from your daily journal files and allows you to assign aliases that align with the names of your Habits & Dailies.
 - **Steps** Allows you to manually enter the step count you gather from sources like *Google Fit*, *Samsung Health* or *Zepp Life* et. c. (currently hardcoded to alter Frontmatter Key `steps`). 
 
-**Beyond this, you can also:**
+**Furthermore, you can also:**
 - Enter in your *Habitica User ID* and *API Token* into settings. With them in place you can hit a keyboard shortcut to paste your **Habits & Dailies** from Habitica into your daily journal file just like that! (You can test it out in [Obsitica-Web](https://dotmavriq.github.io/Obsitica-Web/))
 - automatically switch out your H1 Weekday header(, templated as {WEEKDAY},) into the correct weekday dynamically by entering a keyboard shortcut. New entries generated (from the [Calendar plugin](https://github.com/liamcain/obsidian-calendar-plugin) or otherwise) also automatically get this treatment as it is a desired default.
 
