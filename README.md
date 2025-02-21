@@ -78,7 +78,7 @@ We are getting ever closer to `1.0.0`
 
 **Here is a list of everything that Obsitica already allows you to do:** 
 
-- **Home Tab** - Contains version number and display available shortcuts.
+- **Home Tab** - Contains version number and displays available shortcuts.
 - **Data Quality Diagnostics** - Gives you an overview of the quality of your data for each date. 8 columns of dynamically generated insights into the quality of your daily notes.
 - **Frontmatter Glossary** - Reads the Frontmatter Keys from your daily journal files and allows you to assign aliases that align with the names of your Habits & Dailies.
 - **Steps** Allows you to manually enter the step count you gather from sources like *Google Fit*, *Samsung Health* or *Zepp Life* et. c. (currently hardcoded to alter Frontmatter Key `steps`). 
