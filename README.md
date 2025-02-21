@@ -92,7 +92,7 @@ We are getting ever closer to `1.0`
 
 In order for this plugin to reach `1.0.0` we have some improvements and features that need to be put in place.
 
-- **The Sync feature** - With **Frontmatter Glossary** we have the means to set aliases, or "Habitica Keys" that correspond with the **Frontmatter Keys** we have present in our journal entries. The Sync feature would simply read each daily journal entry, do the math on the values for the Habitica Habits & Dailies and convert their values onto the frontmatter. Once done, we can leverage things like the [Tracker plugin](obsidian://show-plugin?id=obsidian-tracker) to make progress graphs for any Habit or Daily that we so desire!
+- **The Sync feature** - With **Frontmatter Glossary** we have the means to set aliases, or "Habitica Keys" that correspond with the **Frontmatter Keys** we have present in our journal entries. The Sync feature would simply read each daily journal entry, do the math on the values for the Habitica Habits & Dailies and convert their values onto the frontmatter. Once done, we can leverage things like the [Tracker plugin](https://github.com/pyrochlore/obsidian-tracker) to make progress graphs for any Habit or Daily that we so desire!
 - **The TODO Sync needs to be improved** - it currently "works" but does not retain checked checkboxes if one syncs twice in the same document. In short, it needs improvements.  
 - We need to sort out a **pesky bootup bug** where the dynamic {WEEKDAY} replacer runs across all files inside of our Journal folder.
 
