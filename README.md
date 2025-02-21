@@ -5,7 +5,7 @@ The missing tool for the Obsidian + Habitica productivity stack!
 
 ---
 ## What is Obsitica?
-Obsitica is a plugin for [Obsidian](https://obsidian.md/) that interact with the [Habitica API](https://habitica.com/apidoc/), and other things to enhance journaling and local data insights. 
+Obsitica is a plugin for [Obsidian](https://obsidian.md/) that interact with the [Habitica API](https://habitica.com/apidoc/) among other things that enhance journaling and local data insights. 
 
 If you want the elevator pitch, keep reading.
 
