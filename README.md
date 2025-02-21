@@ -85,7 +85,7 @@ We are getting ever closer to `1.0`
 
 **Beyond this, you can also:**
 - Enter in your *Habitica User ID* and *API Token* into settings. With them in place you can hit a keyboard shortcut to paste your **Habits & Dailies** from Habitica into your daily journal file just like that! (You can test it out in [Obsitica-Web](https://dotmavriq.github.io/Obsitica-Web/))
-- automatically switch out your H1 Weekday header(, templated as {WEEKDAY},) into the correct weekday dynamically by entering a keyboard shortcut. New entries generated (from the [Calendar plugin](obsidian://show-plugin?id=calendar) or otherwise) also automatically get this treatment as it is a desired default.
+- automatically switch out your H1 Weekday header(, templated as {WEEKDAY},) into the correct weekday dynamically by entering a keyboard shortcut. New entries generated (from the [Calendar plugin](https://github.com/liamcain/obsidian-calendar-plugin) or otherwise) also automatically get this treatment as it is a desired default.
 
 
 ### What's next?
@@ -102,6 +102,5 @@ Please feel free to try this plugin!
 
 dotMavriQ will eagerly answer any pending questions either on GitHub or via [email](mailto:obsitica+dotmavriq@gmail.com)
 
-And if you like the idea, or better yet, benefit from the plugin, please feel free to donate:
-
+And if you like the idea, or better yet, benefit from the plugin, please feel free to contribute:
 <noscript><a href="https://liberapay.com/dotMavriQ/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
