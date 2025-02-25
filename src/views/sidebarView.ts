@@ -188,5 +188,19 @@ export class SidebarView extends ItemView {
 
     infoSection.createEl("hr");
     infoSection.createEl("p", { text: "Thank you for using Obsitica!" });
+
+    // Donation message
+    infoSection.createEl("small", {
+      text: "If you benefit from this plugin and feel like contributing to its development, please consider donating:",
+    });
+
+    // Row break
+    infoSection.createEl("br");
+
+    // Donation button container using a clickable image
+    const donationDiv = infoSection.createDiv("obsitica-donation");
+    donationDiv.setAttr("style", "margin-top: 5px;");
+    donationDiv.innerHTML =
+      '<a href="https://liberapay.com/dotMavriQ/donate" target="_blank"><img alt="Donate using Liberapay" src="https://img.shields.io/liberapay/patrons/dotMavriQ.svg?logo=liberapay"></a>';
   }
 }
