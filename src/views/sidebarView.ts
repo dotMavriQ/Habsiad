@@ -32,15 +32,17 @@ export class SidebarView extends ItemView {
 
     const tabContainer = container.createDiv("obsitica-tab-container");
     const tabs = [
-      { emoji: "🏡", view: "info" },
-      { emoji: "🔎", view: "diagnostics" },
-      { emoji: "⬆️", view: "glossary" },
-      { emoji: "👟", view: "steps" },
+      { emoji: "🏡", view: "info", label: "Home" },
+      { emoji: "🔎", view: "diagnostics", label: "Data Quality Diagnostics" },
+      { emoji: "⬆️", view: "glossary", label: "Frontmatter Glossary" },
+      { emoji: "👟", view: "steps", label: "Steps" },
     ];
 
     tabs.forEach((tab) => {
       const tabButton = tabContainer.createSpan("obsitica-tab");
       tabButton.setText(tab.emoji);
+      // Add tooltip to show the tab name on hover
+      tabButton.setAttr("title", tab.label);
       tabButton.onClickEvent(() => {
         this.switchTab(tab.view);
         const allTabs = tabContainer.querySelectorAll(".obsitica-tab");
