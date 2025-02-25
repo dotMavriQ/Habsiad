@@ -80,14 +80,19 @@ export default class ObsiticaPlugin extends Plugin {
       ],
     });
 
-    // Automatically replace {WEEKDAY} when a new file is created in the JOURNAL folder
+    // Automatically replace {WEEKDAY} when a new file is created in the JOURNAL folder,
+    // but only if the file contains the "# {WEEKDAY}" placeholder.
     this.registerEvent(
-      this.app.vault.on("create", (file) => {
+      this.app.vault.on("create", async (file) => {
         if (!(file instanceof TFile)) return;
 
         const journalFolderName = this.settings.journalFolderName || "Journal";
         if (file.path.startsWith(`${journalFolderName}/`)) {
-          this.replaceWeekday(file);
+          // Read the file content to check for the placeholder
+          const content = await this.app.vault.read(file);
+          if (content.includes("# {WEEKDAY}")) {
+            this.replaceWeekday(file);
+          }
         }
       })
     );
