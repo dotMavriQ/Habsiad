@@ -175,12 +175,15 @@ export class SidebarView extends ItemView {
 
     const shortcutsList = infoSection.createEl("ul");
 
+    // Commands in alphabetical order
     shortcutsList.createEl("li", {
       text: "Generate Habits & Dailies: Ctrl+Shift+H",
     });
-
     shortcutsList.createEl("li", {
       text: "Replace {WEEKDAY} with Actual Day: Ctrl+Shift+D",
+    });
+    shortcutsList.createEl("li", {
+      text: "Sync Habitica TODO: Ctrl+Shift+Y",
     });
 
     infoSection.createEl("hr");
