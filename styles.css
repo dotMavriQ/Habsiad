@@ -64,3 +64,20 @@ background-color: rgba(0, 0, 0, 0.7); /* Dark header */
 color: #fff;
 font-weight: bold;
 }
+
+/* Sync Button Styling */
+.obsitica-sync-button {
+  padding: 8px 16px;
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 10px 0;
+  transition: background-color 0.2s ease;
+}
+
+.obsitica-sync-button:hover {
+  background-color: var(--interactive-accent-hover);
+}

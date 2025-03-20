@@ -189,6 +189,19 @@ export class SidebarView extends ItemView {
     infoSection.createEl("hr");
     infoSection.createEl("p", { text: "Thank you for using Obsitica!" });
 
+    // Sync Habitica to Frontmatter button
+    const syncButton = infoSection.createEl("button", {
+      text: "Sync Habitica to Frontmatter",
+      cls: "obsitica-sync-button",
+    });
+    syncButton.addEventListener("click", () => {
+      this.plugin.syncHabiticaToFrontmatter();
+    });
+    
+    // Add some spacing
+    infoSection.createEl("br");
+    infoSection.createEl("br");
+
     // Donation message
     infoSection.createEl("small", {
       text: "If you benefit from this plugin and feel like contributing to its development, please consider donating:",
