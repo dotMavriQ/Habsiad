@@ -255,6 +255,261 @@ export default class ObsiticaPlugin extends Plugin {
     // Save the updated file
     await this.app.vault.modify(file, newContent);
   }
+  
+  /**
+   * Updates the "weight" field inside the frontmatter of a journal entry.
+   * If frontmatter exists, modifies the "weight" field.
+   * If frontmatter is missing, adds it to the file.
+   */
+  async updateWeightFrontmatter(file: TFile, newWeight: string) {
+    let content = await this.app.vault.read(file);
+
+    // Locate frontmatter section
+    const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
+    const match = content.match(frontmatterRegex);
+    let newContent;
+
+    if (match) {
+      const frontmatterText = match[1];
+
+      // Check if the "weight" field already exists
+      const hasWeightField = frontmatterText.split("\n").some(line => 
+        line.startsWith("weight:")
+      );
+
+      if (hasWeightField) {
+        // Modify the existing "weight" value
+        const updatedFrontmatter = frontmatterText
+          .split("\n")
+          .map((line) =>
+            line.startsWith("weight:") ? `weight: ${newWeight}` : line
+          )
+          .join("\n");
+
+        newContent = content.replace(
+          frontmatterRegex,
+          `---\n${updatedFrontmatter}\n---`
+        );
+      } else {
+        // Add the "weight" field to the existing frontmatter
+        const updatedFrontmatter = frontmatterText + `\nweight: ${newWeight}`;
+        newContent = content.replace(
+          frontmatterRegex,
+          `---\n${updatedFrontmatter}\n---`
+        );
+      }
+    } else {
+      // If no frontmatter exists, create it
+      newContent = `---\nweight: ${newWeight}\n---\n\n${content}`;
+    }
+
+    // Save the updated file
+    await this.app.vault.modify(file, newContent);
+  }
+  
+  /**
+   * Updates the "calories" field inside the frontmatter of a journal entry.
+   * If frontmatter exists, modifies the "calories" field.
+   * If frontmatter is missing, adds it to the file.
+   */
+  async updateCaloriesFrontmatter(file: TFile, newCalories: string) {
+    let content = await this.app.vault.read(file);
+
+    // Locate frontmatter section
+    const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
+    const match = content.match(frontmatterRegex);
+    let newContent;
+
+    if (match) {
+      const frontmatterText = match[1];
+
+      // Check if the "calories" field already exists
+      const hasCaloriesField = frontmatterText.split("\n").some(line => 
+        line.startsWith("calories:")
+      );
+
+      if (hasCaloriesField) {
+        // Modify the existing "calories" value
+        const updatedFrontmatter = frontmatterText
+          .split("\n")
+          .map((line) =>
+            line.startsWith("calories:") ? `calories: ${newCalories}` : line
+          )
+          .join("\n");
+
+        newContent = content.replace(
+          frontmatterRegex,
+          `---\n${updatedFrontmatter}\n---`
+        );
+      } else {
+        // Add the "calories" field to the existing frontmatter
+        const updatedFrontmatter = frontmatterText + `\ncalories: ${newCalories}`;
+        newContent = content.replace(
+          frontmatterRegex,
+          `---\n${updatedFrontmatter}\n---`
+        );
+      }
+    } else {
+      // If no frontmatter exists, create it
+      newContent = `---\ncalories: ${newCalories}\n---\n\n${content}`;
+    }
+
+    // Save the updated file
+    await this.app.vault.modify(file, newContent);
+  }
+  
+  /**
+   * Calculates calorie totals by properly parsing the EST.CALORIES column in markdown tables
+   * and updating the calories frontmatter key with the sum.
+   */
+  async calculateCalorieTotals() {
+    const journalFolderName = this.settings.journalFolderName || "Journal";
+    const journalFolder = this.app.vault.getAbstractFileByPath(journalFolderName);
+
+    if (!journalFolder || !(journalFolder instanceof TFolder)) {
+      new Notice(`Journal folder "${journalFolderName}" not found.`);
+      return;
+    }
+
+    // Get all journal files with YYYY-MM-DD.md format
+    const journalFiles = journalFolder.children
+      .filter((file) => file instanceof TFile && file.name.match(/^\d{4}-\d{2}-\d{2}\.md$/))
+      .sort((a, b) => b.name.localeCompare(a.name)) as TFile[]; // Sort by date descending
+
+    let filesProcessed = 0;
+    let filesUpdated = 0;
+    
+    // Function to debug print a raw markdown table for inspection
+    const debugPrintTable = (tableName: string, tableText: string) => {
+      console.log(`\n--- ${tableName} ---`);
+      console.log(tableText);
+      console.log("-------------------\n");
+    };
+
+    for (const file of journalFiles) {
+      filesProcessed++;
+      const content = await this.app.vault.read(file);
+      
+      // Very specific approach: Look for a markdown table that has EST.CALORIES in the header
+      // The crucial part is to properly parse the table structure with vertical bars
+      // Start by looking at the content line by line, but preserve the exact format of each line
+      const lines = content.split('\n');
+      let foundCalorieTable = false;
+      let calorieTableLines: string[] = [];
+      let tableStartLine = 0;
+      
+      // First find a table with EST.CALORIES in the header
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        // Look for a header row that contains EST.CALORIES
+        if (line.includes("EST.CALORIES") && line.startsWith("|") && line.endsWith("|")) {
+          foundCalorieTable = true;
+          tableStartLine = i;
+          break;
+        }
+      }
+      
+      if (!foundCalorieTable) {
+        // No calorie table found in this file
+        console.log(`No table with EST.CALORIES found in ${file.name}`);
+        continue;
+      }
+      
+      // Now extract the complete table
+      let tableEndLine = tableStartLine;
+      for (let i = tableStartLine; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.startsWith("|") && line.endsWith("|")) {
+          calorieTableLines.push(line);
+          tableEndLine = i;
+        } else if (i > tableStartLine) {
+          // We've reached the end of the table
+          break;
+        }
+      }
+      
+      // Make sure we have a header and at least one data row
+      if (calorieTableLines.length < 3) {
+        console.log(`Table too short in ${file.name}, found ${calorieTableLines.length} lines`);
+        continue;
+      }
+      
+      const tableText = calorieTableLines.join('\n');
+      debugPrintTable(`Table in ${file.name}`, tableText);
+      
+      // Parse the header to find the column index for EST.CALORIES
+      const headerLine = calorieTableLines[0];
+      const headerCells = headerLine.split('|').map(cell => cell.trim());
+      
+      // Find the index of the EST.CALORIES column (accounting for the empty cells at start/end)
+      let estCaloriesColumnIndex = -1;
+      for (let i = 0; i < headerCells.length; i++) {
+        if (headerCells[i].toUpperCase() === 'EST.CALORIES') {
+          estCaloriesColumnIndex = i;
+          break;
+        }
+      }
+      
+      if (estCaloriesColumnIndex === -1) {
+        console.log(`Could not find EST.CALORIES column in header: ${headerLine}`);
+        continue;
+      }
+      
+      console.log(`EST.CALORIES column is at index ${estCaloriesColumnIndex} in ${file.name}`);
+      
+      // Now process each data row (skipping header and separator)
+      let totalCalories = 0;
+      
+      for (let i = 2; i < calorieTableLines.length; i++) {
+        const dataLine = calorieTableLines[i];
+        const dataCells = dataLine.split('|');
+        
+        // Ensure the array has enough elements to access the EST.CALORIES column
+        if (dataCells.length <= estCaloriesColumnIndex) {
+          console.log(`Row has insufficient columns: ${dataLine}`);
+          continue;
+        }
+        
+        // Get the actual cell content at the EST.CALORIES position
+        const calorieCell = dataCells[estCaloriesColumnIndex].trim();
+        
+        console.log(`Processing cell: "${calorieCell}" in ${file.name}`);
+        
+        // Skip empty cells or cells with just whitespace
+        if (!calorieCell || calorieCell === '') {
+          console.log(`Empty calorie cell in row: ${dataLine}`);
+          continue;
+        }
+        
+        // Try to extract a number from the cell
+        // This regex looks for one or more digits, ignoring any surrounding text
+        const numberMatch = calorieCell.match(/\d+/);
+        
+        if (numberMatch) {
+          const calories = parseInt(numberMatch[0], 10);
+          if (!isNaN(calories) && calories > 0) {
+            console.log(`Found ${calories} calories in ${file.name} at line ${tableStartLine + i}`);
+            totalCalories += calories;
+          }
+        }
+      }
+      
+      if (totalCalories > 0) {
+        console.log(`Total calories in ${file.name}: ${totalCalories}`);
+        // Update the frontmatter with the calculated total
+        await this.updateCaloriesFrontmatter(file, totalCalories.toString());
+        filesUpdated++;
+      } else {
+        console.log(`No valid calories found in ${file.name}`);
+      }
+    }
+    
+    if (filesUpdated > 0) {
+      new Notice(`Updated calorie totals in ${filesUpdated} of ${filesProcessed} journal files.`);
+    } else {
+      new Notice(`No valid calorie data found. Checked ${filesProcessed} journal files.`);
+    }
+  }
 
   /**
    * Replaces {WEEKDAY} with the actual day of the week based on the filename.

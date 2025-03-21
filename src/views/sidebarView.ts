@@ -36,6 +36,8 @@ export class SidebarView extends ItemView {
       { emoji: "🔎", view: "diagnostics", label: "Data Quality Diagnostics" },
       { emoji: "⬆️", view: "glossary", label: "Frontmatter Glossary" },
       { emoji: "👟", view: "steps", label: "Steps" },
+      { emoji: "⚖️", view: "weight", label: "Weight" },
+      { emoji: "🍔", view: "calories", label: "Calories" },
     ];
 
     tabs.forEach((tab) => {
@@ -83,6 +85,12 @@ export class SidebarView extends ItemView {
         break;
       case "steps":
         this.displayStepsTab(container);
+        break;
+      case "weight":
+        this.displayWeightTab(container);
+        break;
+      case "calories":
+        this.displayCaloriesTab(container);
         break;
       default:
         container.setText("Default View");
@@ -163,6 +171,146 @@ export class SidebarView extends ItemView {
       });
     }
   }
+  
+  private displayWeightTab(container: HTMLElement) {
+    const journalFolderName =
+      this.plugin.settings.journalFolderName || "Journal";
+    const journalFolder =
+      this.plugin.app.vault.getAbstractFileByPath(journalFolderName);
+
+    if (!journalFolder || !(journalFolder instanceof TFolder)) {
+      container.setText(`Journal folder "${journalFolderName}" not found.`);
+      return;
+    }
+
+    container.createEl("h3", { text: "Daily Weight" });
+
+    const files = journalFolder.children.filter(
+      (f) => f instanceof TFile && f.extension === "md"
+    );
+
+    const dateFileMap = files
+      .map((file) => {
+        const match = file.name.match(/^(\d{4})-(\d{2})-(\d{2})\.md$/); // Match YYYY-MM-DD.md
+        if (!match) return null;
+        const [_, year, month, day] = match;
+        return { dateString: `${year}-${month}-${day}`, file };
+      })
+      .filter(Boolean) as { dateString: string; file: TFile }[];
+
+    dateFileMap.sort((a, b) => {
+      if (a.dateString < b.dateString) return -1;
+      if (a.dateString > b.dateString) return 1;
+      return 0;
+    });
+
+    const table = container.createEl("table", { cls: "obsitica-steps-table" });
+    const thead = table.createEl("thead");
+    const headerRow = thead.createEl("tr");
+    headerRow.createEl("th", { text: "Date (YYYY/MM/DD)" });
+    headerRow.createEl("th", { text: "Weight (kg)" });
+
+    const tbody = table.createEl("tbody");
+
+    for (const { dateString, file } of dateFileMap) {
+      const metadata = this.plugin.app.metadataCache.getFileCache(file);
+      const frontmatter = metadata?.frontmatter;
+      const currentWeight = frontmatter?.weight ?? "";
+
+      const row = tbody.createEl("tr");
+      row.createEl("td", { text: dateString.replace(/-/g, "/") });
+
+      const weightCell = row.createEl("td");
+      const input = weightCell.createEl("input", { 
+        type: "number",
+        attr: {
+          step: "0.1" // Allow decimal values for more precise weight tracking
+        }
+      });
+      if (currentWeight) {
+        input.value = currentWeight.toString();
+      }
+
+      input.addEventListener("change", async () => {
+        const newWeight = input.value.trim();
+        console.log("Updating weight for file:", file.name, "to:", newWeight);
+        await this.plugin.updateWeightFrontmatter(file, newWeight);
+      });
+    }
+  }
+  
+  private displayCaloriesTab(container: HTMLElement) {
+    const journalFolderName =
+      this.plugin.settings.journalFolderName || "Journal";
+    const journalFolder =
+      this.plugin.app.vault.getAbstractFileByPath(journalFolderName);
+
+    if (!journalFolder || !(journalFolder instanceof TFolder)) {
+      container.setText(`Journal folder "${journalFolderName}" not found.`);
+      return;
+    }
+
+    container.createEl("h3", { text: "Daily Calories" });
+
+    // Add the Calculate Totals button
+    const calculateButton = container.createEl("button", {
+      text: "Calculate totals",
+      cls: "obsitica-sync-button",
+    });
+    calculateButton.setAttr("style", "margin-bottom: 15px;");
+    
+    calculateButton.addEventListener("click", async () => {
+      await this.plugin.calculateCalorieTotals();
+    });
+
+    const files = journalFolder.children.filter(
+      (f) => f instanceof TFile && f.extension === "md"
+    );
+
+    const dateFileMap = files
+      .map((file) => {
+        const match = file.name.match(/^(\d{4})-(\d{2})-(\d{2})\.md$/); // Match YYYY-MM-DD.md
+        if (!match) return null;
+        const [_, year, month, day] = match;
+        return { dateString: `${year}-${month}-${day}`, file };
+      })
+      .filter(Boolean) as { dateString: string; file: TFile }[];
+
+    dateFileMap.sort((a, b) => {
+      if (a.dateString < b.dateString) return -1;
+      if (a.dateString > b.dateString) return 1;
+      return 0;
+    });
+
+    const table = container.createEl("table", { cls: "obsitica-steps-table" });
+    const thead = table.createEl("thead");
+    const headerRow = thead.createEl("tr");
+    headerRow.createEl("th", { text: "Date (YYYY/MM/DD)" });
+    headerRow.createEl("th", { text: "Calories" });
+
+    const tbody = table.createEl("tbody");
+
+    for (const { dateString, file } of dateFileMap) {
+      const metadata = this.plugin.app.metadataCache.getFileCache(file);
+      const frontmatter = metadata?.frontmatter;
+      const currentCalories = frontmatter?.calories ?? "";
+
+      const row = tbody.createEl("tr");
+      row.createEl("td", { text: dateString.replace(/-/g, "/") });
+
+      const caloriesCell = row.createEl("td");
+      const input = caloriesCell.createEl("input", { type: "number" });
+      if (currentCalories) {
+        input.value = currentCalories.toString();
+      }
+
+      input.addEventListener("change", async () => {
+        const newCalories = input.value.trim();
+        console.log("Updating calories for file:", file.name, "to:", newCalories);
+        await this.plugin.updateCaloriesFrontmatter(file, newCalories);
+      });
+    }
+  }
 
   private displayInfoTab(container: HTMLElement) {
     const infoSection = container.createDiv("obsitica-info-section");
@@ -189,17 +337,7 @@ export class SidebarView extends ItemView {
     infoSection.createEl("hr");
     infoSection.createEl("p", { text: "Thank you for using Obsitica!" });
 
-    // Sync Habitica to Frontmatter button
-    const syncButton = infoSection.createEl("button", {
-      text: "Sync Habitica to Frontmatter",
-      cls: "obsitica-sync-button",
-    });
-    syncButton.addEventListener("click", () => {
-      this.plugin.syncHabiticaToFrontmatter();
-    });
-    
     // Add some spacing
-    infoSection.createEl("br");
     infoSection.createEl("br");
 
     // Donation message
