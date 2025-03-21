@@ -43,17 +43,12 @@ export default class ObsiticaPlugin extends Plugin {
       this.activateSidebar();
     });
 
-    // Register Habitica command
+    // Register commands with customizable hotkeys
     this.addCommand({
       id: "generate-habits-and-dailies",
       name: "Generate Habits & Dailies",
       callback: () => this.generateHabitsAndDailies(),
-      hotkeys: [
-        {
-          modifiers: ["Mod", "Shift"],
-          key: "H",
-        },
-      ],
+      hotkeys: [this.settings.shortcuts.generateHabitsAndDailies],
     });
 
     // Register the command to replace {WEEKDAY} with the correct day (Manual Trigger)
@@ -61,25 +56,15 @@ export default class ObsiticaPlugin extends Plugin {
       id: "replace-weekday",
       name: "Replace {WEEKDAY} with Actual Day",
       callback: () => this.replaceWeekday(),
-      hotkeys: [
-        {
-          modifiers: ["Mod", "Shift"],
-          key: "D",
-        },
-      ],
+      hotkeys: [this.settings.shortcuts.replaceWeekday],
     });
 
-    // Register the TODO-Sync command with Ctrl+Shift+Y
+    // Register the TODO-Sync command
     this.addCommand({
       id: "sync-todo",
       name: "Sync Habitica TODO",
       callback: () => this.syncTodo(),
-      hotkeys: [
-        {
-          modifiers: ["Mod", "Shift"],
-          key: "Y",
-        },
-      ],
+      hotkeys: [this.settings.shortcuts.syncTodo],
     });
 
     // Register the Habitica to Frontmatter sync command
@@ -87,6 +72,15 @@ export default class ObsiticaPlugin extends Plugin {
       id: "sync-habitica-to-frontmatter",
       name: "Sync Habitica to Frontmatter",
       callback: () => this.syncHabiticaToFrontmatter(),
+      hotkeys: [this.settings.shortcuts.syncHabiticaToFrontmatter],
+    });
+    
+    // Register the Calculate Calorie Totals command
+    this.addCommand({
+      id: "calculate-calorie-totals",
+      name: "Calculate Calorie Totals",
+      callback: () => this.calculateCalorieTotals(),
+      hotkeys: [this.settings.shortcuts.calculateCalorieTotals],
     });
 
     // Automatically replace {WEEKDAY} when a new file is created in the JOURNAL folder,

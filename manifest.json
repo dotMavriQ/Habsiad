@@ -1,7 +1,7 @@
 {
     "id": "obsitica",
     "name": "Obsitica",
-    "version": "0.8.7",
+    "version": "1.0.0",
     "minAppVersion": "0.12.0",
     "description": "An Obsidian plugin that integrates Habitica data into your daily journal.",
     "author": "dotMavriQ",

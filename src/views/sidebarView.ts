@@ -31,14 +31,23 @@ export class SidebarView extends ItemView {
     container.empty();
 
     const tabContainer = container.createDiv("obsitica-tab-container");
-    const tabs = [
+    // Define all possible tabs
+    const allTabs = [
       { emoji: "🏡", view: "info", label: "Home" },
       { emoji: "🔎", view: "diagnostics", label: "Data Quality Diagnostics" },
       { emoji: "⬆️", view: "glossary", label: "Frontmatter Glossary" },
-      { emoji: "👟", view: "steps", label: "Steps" },
-      { emoji: "⚖️", view: "weight", label: "Weight" },
-      { emoji: "🍔", view: "calories", label: "Calories" },
+      { emoji: "👟", view: "steps", label: "Steps", optional: true, settingKey: "steps" },
+      { emoji: "⚖️", view: "weight", label: "Weight", optional: true, settingKey: "weight" },
+      { emoji: "🍔", view: "calories", label: "Calories", optional: true, settingKey: "calories" },
     ];
+    
+    // Filter tabs based on settings
+    const tabs = allTabs.filter(tab => {
+      if (tab.optional) {
+        return this.plugin.settings.showTabs[tab.settingKey as keyof typeof this.plugin.settings.showTabs];
+      }
+      return true;
+    });
 
     tabs.forEach((tab) => {
       const tabButton = tabContainer.createSpan("obsitica-tab");
@@ -323,15 +332,31 @@ export class SidebarView extends ItemView {
 
     const shortcutsList = infoSection.createEl("ul");
 
-    // Commands in alphabetical order
+    // Helper function to format shortcut display
+    const formatShortcut = (shortcut: {modifiers: string[], key: string}): string => {
+      const modText = shortcut.modifiers.map(mod => {
+        if (mod === "Mod") return "Ctrl/Cmd";
+        return mod;
+      }).join("+");
+      
+      return modText ? `${modText}+${shortcut.key}` : shortcut.key;
+    };
+
+    // Display all shortcuts
     shortcutsList.createEl("li", {
-      text: "Generate Habits & Dailies: Ctrl+Shift+H",
+      text: `Generate Habits & Dailies: ${formatShortcut(this.plugin.settings.shortcuts.generateHabitsAndDailies)}`,
     });
     shortcutsList.createEl("li", {
-      text: "Replace {WEEKDAY} with Actual Day: Ctrl+Shift+D",
+      text: `Replace {WEEKDAY} with Actual Day: ${formatShortcut(this.plugin.settings.shortcuts.replaceWeekday)}`,
     });
     shortcutsList.createEl("li", {
-      text: "Sync Habitica TODO: Ctrl+Shift+Y",
+      text: `Sync Habitica TODO: ${formatShortcut(this.plugin.settings.shortcuts.syncTodo)}`,
+    });
+    shortcutsList.createEl("li", {
+      text: `Sync Habitica to Frontmatter: ${formatShortcut(this.plugin.settings.shortcuts.syncHabiticaToFrontmatter)}`,
+    });
+    shortcutsList.createEl("li", {
+      text: `Calculate Calorie Totals: ${formatShortcut(this.plugin.settings.shortcuts.calculateCalorieTotals)}`,
     });
 
     infoSection.createEl("hr");
