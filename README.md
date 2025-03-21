@@ -3,8 +3,6 @@
 
 The ultimate companion for integrating Obsidian and Habitica into a powerful productivity system!
 
-![Obsitica Banner](https://raw.githubusercontent.com/dotMavriQ/Obsitica/main/docs/obsitica-banner.png)
-
 ---
 
 ## What is Obsitica?
