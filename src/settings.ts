@@ -17,6 +17,7 @@ export interface ObsiticaSettings {
     syncTodo: KeyboardShortcut;
     syncHabiticaToFrontmatter: KeyboardShortcut;
     calculateCalorieTotals: KeyboardShortcut;
+    openRetrotagger: KeyboardShortcut;
   };
   // Tab visibility options
   showTabs: {
@@ -37,6 +38,7 @@ export const DEFAULT_SETTINGS: ObsiticaSettings = {
     syncTodo: { modifiers: ["Mod", "Shift"], key: "Y" },
     syncHabiticaToFrontmatter: { modifiers: ["Mod", "Shift"], key: "Q" },
     calculateCalorieTotals: { modifiers: ["Mod", "Shift"], key: "C" },
+    openRetrotagger: { modifiers: ["Mod", "Shift"], key: "'" },
   },
   // All tabs visible by default
   showTabs: {
@@ -205,6 +207,12 @@ export class ObsiticaSettingTab extends PluginSettingTab {
       "calculateCalorieTotals",
       "Calculate Calorie Totals",
       "Shortcut to calculate and update calorie totals in journal files."
+    );
+    
+    createShortcutSetting(
+      "openRetrotagger",
+      "Open Retrotagger",
+      "Shortcut to open the Retrotagger tool for adding achievements and dailies to journal entries."
     );
     
     // Optional Tabs Section

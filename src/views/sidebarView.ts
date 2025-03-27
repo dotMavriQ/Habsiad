@@ -358,6 +358,9 @@ export class SidebarView extends ItemView {
     shortcutsList.createEl("li", {
       text: `Calculate Calorie Totals: ${formatShortcut(this.plugin.settings.shortcuts.calculateCalorieTotals)}`,
     });
+    shortcutsList.createEl("li", {
+      text: `Open Retrotagger: ${formatShortcut(this.plugin.settings.shortcuts.openRetrotagger)}`,
+    });
 
     infoSection.createEl("hr");
     infoSection.createEl("p", { text: "Thank you for using Obsitica!" });
