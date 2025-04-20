@@ -102,6 +102,17 @@ export async function displayGlossaryTable(
   while (container.firstChild) {
     container.removeChild(container.firstChild);
   }
+  
+  // Add the sync button at the top
+  const syncButton = container.createEl("button", {
+    text: "Sync Habitica to Frontmatter",
+    cls: "obsitica-sync-button",
+  });
+  syncButton.setAttr("style", "margin-bottom: 15px;");
+  
+  syncButton.addEventListener("click", () => {
+    plugin.syncHabiticaToFrontmatter();
+  });
 
   const table = container.createEl("table", {
     cls: "obsitica-glossary-table",
