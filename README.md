@@ -86,4 +86,10 @@ If you benefit from this plugin, please consider supporting the development:
 
 For questions or support, reach out via [GitHub](https://github.com/dotMavriQ/Obsitica) or [email](mailto:obsitica+dotmavriq@gmail.com).
 
+
+And if you like the idea, or better yet, benefit from the plugin, please feel free to donate:
+
+<noscript><a href="https://liberapay.com/dotMavriQ/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
+=======
 Made with ❤️ by [dotMavriQ](https://github.com/dotMavriQ)
+
