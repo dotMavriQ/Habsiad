@@ -1,0 +1,486 @@
+󰣛 dotmavriq  …/Obsitica   main »!+   v23.7.0   17:56  
+ ./habsiad-manager.sh normal
+[INFO] Building the TypeScript app...
+
+> habsiad@1.0.2 build
+> webpack
+
+asset main.js 85.5 KiB [emitted] (name: main) 1 related asset
+runtime modules 937 bytes 4 modules
+cacheable modules 88.5 KiB
+  modules by path ./src/views/ 33 KiB
+    ./src/views/sidebarView.ts 14.4 KiB [built] [code generated]
+    ./src/views/tabs/frontmatterGlossary.ts 4.87 KiB [built] [code generated]
+    ./src/views/tabs/dataQualityDiagnostics.ts 13.7 KiB [built] [code generated] [64 errors]
+  modules by path ./src/*.ts 54 KiB
+    ./src/main.ts 46.1 KiB [built] [code generated]
+    ./src/settings.ts 7.91 KiB [built] [code generated]
+  ./src/habitica/habiticaService.ts 1.56 KiB [built] [code generated]
+external "obsidian" 42 bytes [built] [code generated]
+
+ERROR in ./src/views/tabs/dataQualityDiagnostics.ts 273:0
+Module parse failed: 'return' outside of function (273:0)
+File was processed with these loaders:
+ * ./node_modules/ts-loader/index.js
+You may need an additional loader to handle the result of these loaders.
+|     }
+| }
+> return container;
+| getJournalFolder();
+| TFolder | null;
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 311:4-13
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(311,5)
+      TS1435: Unknown keyword or identifier. Did you mean 'continue'?
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 311:13-14
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(311,14)
+      TS1068: Unexpected token. A constructor, method, accessor, or property was expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 312:4-10
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(312,5)
+      TS1068: Unexpected token. A constructor, method, accessor, or property was expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 313:2-3
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(313,3)
+      TS1128: Declaration or statement expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 315:2-9
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(315,3)
+      TS1128: Declaration or statement expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 315:28-29
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(315,29)
+      TS1005: ';' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 315:45-46
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(315,46)
+      TS1005: ';' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 321:2-9
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(321,3)
+      TS1128: Declaration or statement expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 321:32-33
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(321,33)
+      TS1005: ',' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 321:42-43
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(321,43)
+      TS1005: ';' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 321:50
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(321,51)
+      TS1011: An element access expression should take an argument.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 321:52-53
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(321,53)
+      TS1005: ';' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 328:2-9
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(328,3)
+      TS1128: Declaration or statement expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 328:10-15
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(328,11)
+      TS1434: Unexpected keyword or identifier.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 328:34-35
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(328,35)
+      TS1005: ',' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 328:42-43
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(328,43)
+      TS1005: ';' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 329:10-17
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(329,11)
+      TS1005: ':' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 329:51-52
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(329,52)
+      TS1005: ',' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 330:10-15
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(330,11)
+      TS1005: ':' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 330:62-63
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(330,63)
+      TS1005: ',' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 331:8-9
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(331,9)
+      TS1003: Identifier expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 331:16-22
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(331,17)
+      TS1005: '{' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 331:23-27
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(331,24)
+      TS1005: ':' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 331:27-28
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(331,28)
+      TS1005: ',' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 332:10-17
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(332,11)
+      TS1005: ':' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 335:55-56
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(335,56)
+      TS1005: ',' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 336:11-18
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(336,12)
+      TS1005: ':' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 336:56-57
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(336,57)
+      TS1005: ',' expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 338:0-1
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(338,1)
+      TS1128: Declaration or statement expected.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 13:18-38
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(13,19)
+      TS2366: Function lacks ending return statement and return type does not include 'undefined'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 40:31-47
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(40,32)
+      TS2339: Property 'getJournalFolder' does not exist on type 'DataQualityDiagnosticsView'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 49:23-38
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(49,24)
+      TS2339: Property 'getJournalFiles' does not exist on type 'DataQualityDiagnosticsView'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 79:34-47
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(79,35)
+      TS2339: Property 'extractH5Text' does not exist on type 'DataQualityDiagnosticsView'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 311:4-13
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(311,5)
+      TS7008: Member 'container' implicitly has an 'any' type.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 311:14-25
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(311,15)
+      TS2391: Function implementation is missing or not immediately following the declaration.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 311:14-25
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(311,15)
+      TS7010: 'appendChild', which lacks return-type annotation, implicitly has an 'any' return type.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 311:26-31
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(311,27)
+      TS7006: Parameter 'table' implicitly has an 'any' type.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 315:10-26
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(315,11)
+      TS2304: Cannot find name 'getJournalFolder'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 315:30-37
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(315,31)
+      TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 315:40-44
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(315,41)
+      TS18050: The value 'null' cannot be used here.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 316:23-27
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(316,24)
+      TS2532: Object is possibly 'undefined'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 317:19-23
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(317,20)
+      TS2532: Object is possibly 'undefined'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 321:10-25
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(321,11)
+      TS2304: Cannot find name 'getJournalFiles'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 321:26-32
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(321,27)
+      TS2552: Cannot find name 'folder'. Did you mean 'TFolder'?
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 321:44-51
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(321,45)
+      TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type 'typeof TFile'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 328:10-15
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(328,11)
+      TS2304: Cannot find name 'async'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 328:16-29
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(328,17)
+      TS2304: Cannot find name 'extractH5Text'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 328:30-34
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(328,31)
+      TS2552: Cannot find name 'file'. Did you mean 'TFile'?
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 328:44-337:3
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(328,45)
+      TS2447: The '|' operator is not allowed for boolean types. Consider using '||' instead.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 328:52-58
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(328,53)
+      TS2693: 'string' only refers to a type, but is being used as a value here.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 328:61-65
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(328,62)
+      TS18050: The value 'null' cannot be used here.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 329:10-17
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(329,11)
+      TS2304: Cannot find name 'content'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 329:26-30
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(329,27)
+      TS2532: Object is possibly 'undefined'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 329:46-50
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(329,47)
+      TS2552: Cannot find name 'file'. Did you mean 'TFile'?
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 330:10-15
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(330,11)
+      TS2552: Cannot find name 'match'. Did you mean 'Math'?
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 330:18-25
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(330,19)
+      TS2304: Cannot find name 'content'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 331:8
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(331,9)
+      TS7006: Parameter '(Missing)' implicitly has an 'any' type.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 331:9-14
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(331,10)
+      TS7006: Parameter 'match' implicitly has an 'any' type.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 332:10-17
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(332,11)
+      TS2304: Cannot find name 'h5Lines'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 332:20-25
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(332,21)
+      TS2304: Cannot find name 'match'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 334:15-19
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(334,16)
+      TS7006: Parameter 'line' implicitly has an 'any' type.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 335:12-16
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(335,13)
+      TS7006: Parameter 'line' implicitly has an 'any' type.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 336:11-18
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(336,12)
+      TS2304: Cannot find name 'h5Lines'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts
+./src/views/tabs/dataQualityDiagnostics.ts 336:32-39
+[tsl] ERROR in /home/dotmavriq/Code/Obsitica/Obsitica/src/views/tabs/dataQualityDiagnostics.ts(336,33)
+      TS2304: Cannot find name 'h5Lines'.
+ @ ./src/views/sidebarView.ts 3:0-75 90:36-62
+ @ ./src/main.ts 3:0-69 321:26-43 321:59-70 385:46-63 388:47-64 392:26-43
+
+64 errors have detailed information that is not shown.
+Use 'stats.errorDetails: true' resp. '--stats-error-details' to show it.
+
+webpack 5.95.0 compiled with 65 errors in 1384 ms
+[ERROR] Build failed. Aborting.

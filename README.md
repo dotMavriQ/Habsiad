@@ -1,13 +1,13 @@
 
-# Obsitica 1.0.0
+# Habsiad 1.0.0
 
 The ultimate companion for integrating Obsidian and Habitica into a powerful productivity system!
 
 ---
 
-## What is Obsitica?
+## What is Habsiad?
 
-Obsitica is a powerful plugin for [Obsidian](https://obsidian.md/) that integrates with the [Habitica API](https://habitica.com/apidoc/) to enhance your journaling and productivity tracking. It creates a seamless bridge between Habitica's gamified habit tracking and Obsidian's powerful knowledge management system.
+Habsiad is a powerful plugin for [Obsidian](https://obsidian.md/) that integrates with the [Habitica API](https://habitica.com/apidoc/) to enhance your journaling and productivity tracking. It creates a seamless bridge between Habitica's gamified habit tracking and Obsidian's powerful knowledge management system.
 
 ### Key Features
 
@@ -66,7 +66,7 @@ You can show or hide optional tracking tabs:
 
 ## Requirements and Conventions
 
-For optimal results, Obsitica works best with:
+For optimal results, Habsiad works best with:
 - Journal files named in `YYYY-MM-DD.md` format
 - A dedicated journal folder (configurable in settings)
 - Consistent frontmatter structure in your notes
@@ -74,7 +74,7 @@ For optimal results, Obsitica works best with:
 
 ## Contributing
 
-Contributions are welcome! Feel free to open issues or pull requests on [GitHub](https://github.com/dotMavriQ/Obsitica).
+Contributions are welcome! Feel free to open issues or pull requests on [GitHub](https://github.com/dotMavriQ/Habsiad).
 
 If you benefit from this plugin, please consider supporting the development:
 
@@ -84,7 +84,7 @@ If you benefit from this plugin, please consider supporting the development:
 
 ## Contact
 
-For questions or support, reach out via [GitHub](https://github.com/dotMavriQ/Obsitica) or [email](mailto:obsitica+dotmavriq@gmail.com).
+For questions or support, reach out via [GitHub](https://github.com/dotMavriQ/Habsiad) or [email](mailto:habsiad+dotmavriq@gmail.com).
 
 
 And if you like the idea, or better yet, benefit from the plugin, please feel free to donate:

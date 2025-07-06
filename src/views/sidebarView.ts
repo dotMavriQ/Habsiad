@@ -1,15 +1,15 @@
 import { ItemView, TFolder, TFile, WorkspaceLeaf } from "obsidian";
-import ObsiticaPlugin from "../main"; // Ensure the path matches your project structure
+import HabsiadPlugin from "../main"; // Ensure the path matches your project structure
 
 import { displayGlossaryTable } from "./tabs/frontmatterGlossary";
 import { DataQualityDiagnosticsView } from "./tabs/dataQualityDiagnostics";
 
-export const VIEW_TYPE_SIDEBAR = "obsitica-sidebar-view";
+export const VIEW_TYPE_SIDEBAR = "habsiad-sidebar-view";
 
 export class SidebarView extends ItemView {
-  private plugin: ObsiticaPlugin;
+  private plugin: HabsiadPlugin;
 
-  constructor(leaf: WorkspaceLeaf, plugin: ObsiticaPlugin) {
+  constructor(leaf: WorkspaceLeaf, plugin: HabsiadPlugin) {
     super(leaf);
     this.plugin = plugin;
   }
@@ -19,7 +19,7 @@ export class SidebarView extends ItemView {
   }
 
   getDisplayText() {
-    return "Obsitica";
+    return "Habsiad";
   }
 
   getIcon() {
@@ -30,42 +30,67 @@ export class SidebarView extends ItemView {
     const container = this.containerEl.children[1];
     container.empty();
 
-    const tabContainer = container.createDiv("obsitica-tab-container");
+    const tabContainer = container.createDiv("habsiad-tab-container");
     // Define all possible tabs
     const allTabs = [
       { emoji: "🏡", view: "info", label: "Home" },
       { emoji: "🔎", view: "diagnostics", label: "Data Quality Diagnostics" },
       { emoji: "⬆️", view: "glossary", label: "Frontmatter Glossary" },
-      { emoji: "👟", view: "steps", label: "Steps", optional: true, settingKey: "steps" },
-      { emoji: "⚖️", view: "weight", label: "Weight", optional: true, settingKey: "weight" },
-      { emoji: "🍔", view: "calories", label: "Calories", optional: true, settingKey: "calories" },
+      {
+        emoji: "👟",
+        view: "steps",
+        label: "Steps",
+        optional: true,
+        settingKey: "steps",
+      },
+      {
+        emoji: "⚖️",
+        view: "weight",
+        label: "Weight",
+        optional: true,
+        settingKey: "weight",
+      },
+      {
+        emoji: "🍔",
+        view: "calories",
+        label: "Calories",
+        optional: true,
+        settingKey: "calories",
+      },
     ];
-    
+
     // Filter tabs based on settings
-    const tabs = allTabs.filter(tab => {
+    const tabs = allTabs.filter((tab) => {
       if (tab.optional) {
-        return this.plugin.settings.showTabs[tab.settingKey as keyof typeof this.plugin.settings.showTabs];
+        return this.plugin.settings.showTabs[
+          tab.settingKey as keyof typeof this.plugin.settings.showTabs
+        ];
       }
       return true;
     });
 
     tabs.forEach((tab) => {
-      const tabButton = tabContainer.createSpan("obsitica-tab");
+      const tabButton = tabContainer.createSpan("habsiad-tab");
       tabButton.setText(tab.emoji);
       // Add tooltip to show the tab name on hover
       tabButton.setAttr("title", tab.label);
+      // Ensure cursor pointer is set
+      tabButton.style.cursor = "pointer";
       tabButton.onClickEvent(() => {
         this.switchTab(tab.view);
-        const allTabs = tabContainer.querySelectorAll(".obsitica-tab");
-        allTabs.forEach((el) => el.removeClass("active"));
+        // Remove active class from all tabs
+        const allTabElements = tabContainer.querySelectorAll(".habsiad-tab");
+        allTabElements.forEach((el) => el.removeClass("active"));
+        // Add active class to clicked tab
         tabButton.addClass("active");
       });
     });
 
-    const firstTab = tabContainer.querySelector(".obsitica-tab");
+    // Set the first tab as active by default
+    const firstTab = tabContainer.querySelector(".habsiad-tab");
     if (firstTab) firstTab.addClass("active");
 
-    const contentArea = container.createDiv("obsitica-content-area");
+    const contentArea = container.createDiv("habsiad-content-area");
     this.displayContent(contentArea, "info");
   }
 
@@ -75,10 +100,12 @@ export class SidebarView extends ItemView {
 
   private switchTab(view: string) {
     const contentArea = this.containerEl.querySelector(
-      ".obsitica-content-area"
+      ".habsiad-content-area"
     ) as HTMLElement;
-    contentArea.empty();
-    this.displayContent(contentArea, view);
+    if (contentArea) {
+      contentArea.empty();
+      this.displayContent(contentArea, view);
+    }
   }
 
   private displayContent(container: HTMLElement, view: string) {
@@ -151,7 +178,7 @@ export class SidebarView extends ItemView {
       return 0;
     });
 
-    const table = container.createEl("table", { cls: "obsitica-steps-table" });
+    const table = container.createEl("table", { cls: "habsiad-steps-table" });
     const thead = table.createEl("thead");
     const headerRow = thead.createEl("tr");
     headerRow.createEl("th", { text: "Date (YYYY/MM/DD)" });
@@ -180,7 +207,7 @@ export class SidebarView extends ItemView {
       });
     }
   }
-  
+
   private displayWeightTab(container: HTMLElement) {
     const journalFolderName =
       this.plugin.settings.journalFolderName || "Journal";
@@ -213,7 +240,7 @@ export class SidebarView extends ItemView {
       return 0;
     });
 
-    const table = container.createEl("table", { cls: "obsitica-steps-table" });
+    const table = container.createEl("table", { cls: "habsiad-steps-table" });
     const thead = table.createEl("thead");
     const headerRow = thead.createEl("tr");
     headerRow.createEl("th", { text: "Date (YYYY/MM/DD)" });
@@ -230,11 +257,11 @@ export class SidebarView extends ItemView {
       row.createEl("td", { text: dateString.replace(/-/g, "/") });
 
       const weightCell = row.createEl("td");
-      const input = weightCell.createEl("input", { 
+      const input = weightCell.createEl("input", {
         type: "number",
         attr: {
-          step: "0.1" // Allow decimal values for more precise weight tracking
-        }
+          step: "0.1", // Allow decimal values for more precise weight tracking
+        },
       });
       if (currentWeight) {
         input.value = currentWeight.toString();
@@ -247,7 +274,7 @@ export class SidebarView extends ItemView {
       });
     }
   }
-  
+
   private displayCaloriesTab(container: HTMLElement) {
     const journalFolderName =
       this.plugin.settings.journalFolderName || "Journal";
@@ -264,10 +291,10 @@ export class SidebarView extends ItemView {
     // Add the Calculate Totals button
     const calculateButton = container.createEl("button", {
       text: "Calculate totals",
-      cls: "obsitica-sync-button",
+      cls: "habsiad-sync-button",
     });
     calculateButton.setAttr("style", "margin-bottom: 15px;");
-    
+
     calculateButton.addEventListener("click", async () => {
       await this.plugin.calculateCalorieTotals();
     });
@@ -291,7 +318,7 @@ export class SidebarView extends ItemView {
       return 0;
     });
 
-    const table = container.createEl("table", { cls: "obsitica-steps-table" });
+    const table = container.createEl("table", { cls: "habsiad-steps-table" });
     const thead = table.createEl("thead");
     const headerRow = thead.createEl("tr");
     headerRow.createEl("th", { text: "Date (YYYY/MM/DD)" });
@@ -315,15 +342,20 @@ export class SidebarView extends ItemView {
 
       input.addEventListener("change", async () => {
         const newCalories = input.value.trim();
-        console.log("Updating calories for file:", file.name, "to:", newCalories);
+        console.log(
+          "Updating calories for file:",
+          file.name,
+          "to:",
+          newCalories
+        );
         await this.plugin.updateCaloriesFrontmatter(file, newCalories);
       });
     }
   }
 
   private displayInfoTab(container: HTMLElement) {
-    const infoSection = container.createDiv("obsitica-info-section");
-    infoSection.createEl("h3", { text: "Obsitica Plugin" });
+    const infoSection = container.createDiv("habsiad-info-section");
+    infoSection.createEl("h3", { text: "Habsiad Plugin" });
 
     const pluginVersion = this.plugin.manifest.version;
     infoSection.createEl("p", { text: `Version: ${pluginVersion}` });
@@ -333,37 +365,54 @@ export class SidebarView extends ItemView {
     const shortcutsList = infoSection.createEl("ul");
 
     // Helper function to format shortcut display
-    const formatShortcut = (shortcut: {modifiers: string[], key: string}): string => {
-      const modText = shortcut.modifiers.map(mod => {
-        if (mod === "Mod") return "Ctrl/Cmd";
-        return mod;
-      }).join("+");
-      
+    const formatShortcut = (shortcut: {
+      modifiers: string[];
+      key: string;
+    }): string => {
+      const modText = shortcut.modifiers
+        .map((mod) => {
+          if (mod === "Mod") return "Ctrl/Cmd";
+          return mod;
+        })
+        .join("+");
+
       return modText ? `${modText}+${shortcut.key}` : shortcut.key;
     };
 
     // Display all shortcuts
     shortcutsList.createEl("li", {
-      text: `Generate Habits & Dailies: ${formatShortcut(this.plugin.settings.shortcuts.generateHabitsAndDailies)}`,
+      text: `Generate Habits & Dailies: ${formatShortcut(
+        this.plugin.settings.shortcuts.generateHabitsAndDailies
+      )}`,
     });
     shortcutsList.createEl("li", {
-      text: `Replace {WEEKDAY} with Actual Day: ${formatShortcut(this.plugin.settings.shortcuts.replaceWeekday)}`,
+      text: `Replace {WEEKDAY} with Actual Day: ${formatShortcut(
+        this.plugin.settings.shortcuts.replaceWeekday
+      )}`,
     });
     shortcutsList.createEl("li", {
-      text: `Sync Habitica TODO: ${formatShortcut(this.plugin.settings.shortcuts.syncTodo)}`,
+      text: `Sync Habitica TODO: ${formatShortcut(
+        this.plugin.settings.shortcuts.syncTodo
+      )}`,
     });
     shortcutsList.createEl("li", {
-      text: `Sync Habitica to Frontmatter: ${formatShortcut(this.plugin.settings.shortcuts.syncHabiticaToFrontmatter)}`,
+      text: `Sync Habitica to Frontmatter: ${formatShortcut(
+        this.plugin.settings.shortcuts.syncHabiticaToFrontmatter
+      )}`,
     });
     shortcutsList.createEl("li", {
-      text: `Calculate Calorie Totals: ${formatShortcut(this.plugin.settings.shortcuts.calculateCalorieTotals)}`,
+      text: `Calculate Calorie Totals: ${formatShortcut(
+        this.plugin.settings.shortcuts.calculateCalorieTotals
+      )}`,
     });
     shortcutsList.createEl("li", {
-      text: `Open Retrotagger: ${formatShortcut(this.plugin.settings.shortcuts.openRetrotagger)}`,
+      text: `Open Retrotagger: ${formatShortcut(
+        this.plugin.settings.shortcuts.openRetrotagger
+      )}`,
     });
 
     infoSection.createEl("hr");
-    infoSection.createEl("p", { text: "Thank you for using Obsitica!" });
+    infoSection.createEl("p", { text: "Thank you for using Habsiad!" });
 
     // Add some spacing
     infoSection.createEl("br");
@@ -377,8 +426,9 @@ export class SidebarView extends ItemView {
     infoSection.createEl("br");
 
     // Donation button container using a clickable image
-    const donationDiv = infoSection.createDiv("obsitica-donation");
+    const donationDiv = infoSection.createDiv("habsiad-donation");
     donationDiv.setAttr("style", "margin-top: 5px;");
+
     donationDiv.innerHTML =
       '<a href="https://liberapay.com/dotMavriQ/donate" target="_blank"><img alt="Donate using Liberapay" src="https://img.shields.io/liberapay/patrons/dotMavriQ.svg?logo=liberapay"></a>';
   }

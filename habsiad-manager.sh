@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Paths
-PLUGIN_PATH="/home/dotmavriq/Documents/LIFE/.obsidian/plugins/Obsitica"
+PLUGIN_PATH="/home/dotmavriq/Documents/LIFE/.obsidian/plugins/Habsiad"
 REPO_PATH="/home/dotmavriq/Code/Obsitica/Obsitica"
 BACKUP_PATH="${PLUGIN_PATH}-backup"
 
@@ -56,6 +56,13 @@ elif [[ "$1" == "normal" ]]; then
     cp "$REPO_PATH/main.js" "$PLUGIN_PATH/main.js"
     cp "$REPO_PATH/manifest.json" "$PLUGIN_PATH/manifest.json"
     cp "$REPO_PATH/styles.css" "$PLUGIN_PATH/styles.css"
+    
+    # Preserve data.json if it exists (contains user settings)
+    if [[ -f "$BACKUP_PATH/data.json" ]]; then
+        print_info "Preserving existing user settings..."
+        cp "$BACKUP_PATH/data.json" "$PLUGIN_PATH/data.json"
+    fi
+    
     print_success "Files exported to $PLUGIN_PATH."
 
     # Step 4: Confirm completion

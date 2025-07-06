@@ -1,11 +1,11 @@
 import { requestUrl, RequestUrlParam } from 'obsidian';
-import ObsiticaPlugin from '../main';
+import HabsiadPlugin from '../main';
 
 export class HabiticaService {
-  private plugin: ObsiticaPlugin;
+  private plugin: HabsiadPlugin;
   private apiUrl: string = 'https://habitica.com/api/v3';
 
-  constructor(plugin: ObsiticaPlugin) {
+  constructor(plugin: HabsiadPlugin) {
     this.plugin = plugin;
   }
 

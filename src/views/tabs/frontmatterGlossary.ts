@@ -1,16 +1,16 @@
 import { TFile, TFolder } from "obsidian";
-import ObsiticaPlugin from "../../main";
+import HabsiadPlugin from "../../main";
 
 let glossaryMapping: { [key: string]: string } = {};
 const glossaryFileName = "frontmatterGlossary.json";
-// Hardcoded folder name since your plugin folder is "Obsitica"
-const pluginFolder = ".obsidian/plugins/Obsitica";
+// Hardcoded folder name since your plugin folder is "Habsiad"
+const pluginFolder = ".obsidian/plugins/Habsiad";
 
 /**
  * Loads the glossary mapping from frontmatterGlossary.json.
  * If the file doesn't exist, it creates an empty mapping and writes it.
  */
-async function loadGlossaryMapping(plugin: ObsiticaPlugin): Promise<void> {
+async function loadGlossaryMapping(plugin: HabsiadPlugin): Promise<void> {
   const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
   try {
     const data = await plugin.app.vault.adapter.read(glossaryPath);
@@ -29,7 +29,7 @@ async function loadGlossaryMapping(plugin: ObsiticaPlugin): Promise<void> {
 /**
  * Saves the current glossary mapping to frontmatterGlossary.json with 4-space indentation.
  */
-async function saveGlossaryMapping(plugin: ObsiticaPlugin): Promise<void> {
+async function saveGlossaryMapping(plugin: HabsiadPlugin): Promise<void> {
   const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
   const json = JSON.stringify(glossaryMapping, null, 4);
   await plugin.app.vault.adapter.write(glossaryPath, json);
@@ -47,7 +47,7 @@ export function getHabiticaKey(key: string): string {
  * Saves a Habitica key for a given frontmatter key.
  */
 export async function saveHabiticaKey(
-  plugin: ObsiticaPlugin,
+  plugin: HabsiadPlugin,
   key: string,
   value: string
 ): Promise<void> {
@@ -56,7 +56,7 @@ export async function saveHabiticaKey(
   await saveGlossaryMapping(plugin);
 }
 
-function getAllFrontmatterKeys(plugin: ObsiticaPlugin): string[] {
+function getAllFrontmatterKeys(plugin: HabsiadPlugin): string[] {
   const journalFolderName = plugin.settings.journalFolderName || "Journal";
   const journalFolder =
     plugin.app.vault.getAbstractFileByPath(journalFolderName);
@@ -95,7 +95,7 @@ function getAllFrontmatterKeys(plugin: ObsiticaPlugin): string[] {
  */
 export async function displayGlossaryTable(
   container: HTMLElement,
-  plugin: ObsiticaPlugin
+  plugin: HabsiadPlugin
 ) {
   await loadGlossaryMapping(plugin);
 
@@ -106,16 +106,17 @@ export async function displayGlossaryTable(
   // Add the sync button at the top
   const syncButton = container.createEl("button", {
     text: "Sync Habitica to Frontmatter",
-    cls: "obsitica-sync-button",
+    cls: "habsiad-sync-button",
   });
   syncButton.setAttr("style", "margin-bottom: 15px;");
+  
   
   syncButton.addEventListener("click", () => {
     plugin.syncHabiticaToFrontmatter();
   });
 
   const table = container.createEl("table", {
-    cls: "obsitica-glossary-table",
+    cls: "habsiad-glossary-table",
   });
   const thead = table.createEl("thead");
   const headerRow = thead.createEl("tr");

@@ -13,19 +13,19 @@ import {
 import { HabiticaService } from "./habitica/habiticaService";
 import { SidebarView, VIEW_TYPE_SIDEBAR } from "./views/sidebarView";
 import {
-  ObsiticaSettingTab,
+  HabsiadSettingTab,
   DEFAULT_SETTINGS,
-  ObsiticaSettings,
+  HabsiadSettings,
 } from "./settings";
 
 // RetroTagger modal for adding achievements and dailies to journal entries
 class RetroTaggerModal extends Modal {
-  private plugin: ObsiticaPlugin;
+  private plugin: HabsiadPlugin;
   private selectedItems: { [key: string]: string } = {}; // key -> "achievement" or "daily"
   private itemButtons: { [key: string]: HTMLElement } = {};
   private journalDate: string;
   
-  constructor(app: App, plugin: ObsiticaPlugin) {
+  constructor(app: App, plugin: HabsiadPlugin) {
     super(app);
     this.plugin = plugin;
     this.journalDate = "";
@@ -133,7 +133,7 @@ class RetroTaggerModal extends Modal {
   
   // Load Habitica keys from the glossary
   private async loadHabiticaKeys(): Promise<string[]> {
-    const pluginFolder = ".obsidian/plugins/Obsitica";
+    const pluginFolder = ".obsidian/plugins/Habsiad";
     const glossaryFileName = "frontmatterGlossary.json";
     const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
     
@@ -361,12 +361,12 @@ class RetroTaggerModal extends Modal {
   }
 }
 
-export default class ObsiticaPlugin extends Plugin {
+export default class HabsiadPlugin extends Plugin {
   public habiticaService!: HabiticaService;
-  public settings: ObsiticaSettings = DEFAULT_SETTINGS; // ✅ Ensures initialization
+  public settings: HabsiadSettings = DEFAULT_SETTINGS; // ✅ Ensures initialization
 
   async onload() {
-    console.log("Loading Obsitica Plugin");
+    console.log("Loading Habsiad Plugin");
 
     // Load settings
     await this.loadSettings();
@@ -375,7 +375,7 @@ export default class ObsiticaPlugin extends Plugin {
     this.habiticaService = new HabiticaService(this);
 
     // Add settings tab
-    this.addSettingTab(new ObsiticaSettingTab(this.app, this));
+    this.addSettingTab(new HabsiadSettingTab(this.app, this));
 
     // Register the sidebar view
     this.registerView(
@@ -455,7 +455,7 @@ export default class ObsiticaPlugin extends Plugin {
   }
 
   onunload() {
-    console.log("Unloading Obsitica Plugin");
+    console.log("Unloading Habsiad Plugin");
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEBAR);
   }
 
@@ -521,7 +521,7 @@ export default class ObsiticaPlugin extends Plugin {
     const { habiticaUserId, habiticaApiToken } = this.settings;
     if (!habiticaUserId || !habiticaApiToken) {
       new Notice(
-        "Please enter your Habitica credentials in the Obsitica settings."
+        "Please enter your Habitica credentials in the Habsiad settings."
       );
       return;
     }
@@ -1096,7 +1096,7 @@ export default class ObsiticaPlugin extends Plugin {
     }
 
     // Get the frontmatter glossary mapping
-    const pluginFolder = ".obsidian/plugins/Obsitica";
+    const pluginFolder = ".obsidian/plugins/Habsiad";
     const glossaryFileName = "frontmatterGlossary.json";
     const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
     

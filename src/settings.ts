@@ -1,12 +1,12 @@
 import { App, PluginSettingTab, Setting, Modifier } from "obsidian";
-import ObsiticaPlugin from "./main";
+import HabsiadPlugin from "./main";
 
 export interface KeyboardShortcut {
   modifiers: Modifier[];
   key: string;
 }
 
-export interface ObsiticaSettings {
+export interface HabsiadSettings {
   habiticaUserId: string;
   habiticaApiToken: string;
   journalFolderName: string;
@@ -27,7 +27,7 @@ export interface ObsiticaSettings {
   };
 }
 
-export const DEFAULT_SETTINGS: ObsiticaSettings = {
+export const DEFAULT_SETTINGS: HabsiadSettings = {
   habiticaUserId: "",
   habiticaApiToken: "",
   journalFolderName: "Journal",
@@ -48,10 +48,10 @@ export const DEFAULT_SETTINGS: ObsiticaSettings = {
   },
 };
 
-export class ObsiticaSettingTab extends PluginSettingTab {
-  plugin: ObsiticaPlugin;
+export class HabsiadSettingTab extends PluginSettingTab {
+  plugin: HabsiadPlugin;
 
-  constructor(app: App, plugin: ObsiticaPlugin) {
+  constructor(app: App, plugin: HabsiadPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
@@ -60,7 +60,7 @@ export class ObsiticaSettingTab extends PluginSettingTab {
     const { containerEl } = this;
 
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Obsitica Settings" });
+    containerEl.createEl("h2", { text: "Habsiad Settings" });
 
     // Habitica User ID Setting
     new Setting(containerEl)
@@ -109,7 +109,7 @@ export class ObsiticaSettingTab extends PluginSettingTab {
     
     // Helper function to create a shortcut setting
     const createShortcutSetting = (
-      id: keyof ObsiticaSettings["shortcuts"],
+      id: keyof HabsiadSettings["shortcuts"],
       name: string,
       desc: string
     ) => {
