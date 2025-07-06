@@ -63,6 +63,12 @@ elif [[ "$1" == "normal" ]]; then
         cp "$BACKUP_PATH/data.json" "$PLUGIN_PATH/data.json"
     fi
     
+    # Preserve settings sync file if it exists
+    if [[ -f "$BACKUP_PATH/habsiad-settings.json" ]]; then
+        print_info "Preserving existing sync settings file..."
+        cp "$BACKUP_PATH/habsiad-settings.json" "$PLUGIN_PATH/habsiad-settings.json"
+    fi
+    
     print_success "Files exported to $PLUGIN_PATH."
 
     # Step 4: Confirm completion

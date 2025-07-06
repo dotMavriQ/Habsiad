@@ -17,6 +17,7 @@ import {
   DEFAULT_SETTINGS,
   HabsiadSettings,
 } from "./settings";
+import { SettingsSync } from "./utils/settingsSync";
 
 // RetroTagger modal for adding achievements and dailies to journal entries
 class RetroTaggerModal extends Modal {
@@ -24,136 +25,175 @@ class RetroTaggerModal extends Modal {
   private selectedItems: { [key: string]: string } = {}; // key -> "achievement" or "daily"
   private itemButtons: { [key: string]: HTMLElement } = {};
   private journalDate: string;
-  
+
   constructor(app: App, plugin: HabsiadPlugin) {
     super(app);
     this.plugin = plugin;
     this.journalDate = "";
   }
-  
+
   async onOpen() {
     const { contentEl } = this;
     contentEl.empty();
-    
+
     // Get current file to check if it's a journal entry
     const activeFile = this.app.workspace.getActiveFile();
     if (!activeFile) {
       contentEl.createEl("div", { text: "No file is currently open." });
       return;
     }
-    
+
     // Check if the file is in the journal folder and has the YYYY-MM-DD.md format
-    const journalFolderName = this.plugin.settings.journalFolderName || "Journal";
+    const journalFolderName =
+      this.plugin.settings.journalFolderName || "Journal";
     const filePathLower = activeFile.path.toLowerCase();
     const journalFolderLower = journalFolderName.toLowerCase();
-    
+
     if (!filePathLower.startsWith(`${journalFolderLower}/`)) {
-      contentEl.createEl("div", { text: `This file is not in the ${journalFolderName} folder.` });
+      contentEl.createEl("div", {
+        text: `This file is not in the ${journalFolderName} folder.`,
+      });
       return;
     }
-    
+
     const match = activeFile.name.match(/^(\d{4}-\d{2}-\d{2})\.md$/);
     if (!match) {
-      contentEl.createEl("div", { text: "This file is not a valid journal entry (YYYY-MM-DD.md format required)." });
+      contentEl.createEl("div", {
+        text: "This file is not a valid journal entry (YYYY-MM-DD.md format required).",
+      });
       return;
     }
-    
+
     this.journalDate = match[1];
-    
+
     // Create the main container for the retrotagger UI
     const mainContainer = contentEl.createDiv({ cls: "retrotagger-container" });
-    
+
     // Add header
     mainContainer.createEl("h2", { text: `RetroTagger - ${this.journalDate}` });
-    
+
     // Add instructions
-    const instructionsDiv = mainContainer.createDiv({ cls: "retrotagger-instructions" });
-    instructionsDiv.createEl("p", { text: "Click once on an item to add it to Achievements (blue)." });
-    instructionsDiv.createEl("p", { text: "Click twice on an item to add it to Dailies (green)." });
+    const instructionsDiv = mainContainer.createDiv({
+      cls: "retrotagger-instructions",
+    });
+    instructionsDiv.createEl("p", {
+      text: "Click once on an item to add it to Achievements (blue).",
+    });
+    instructionsDiv.createEl("p", {
+      text: "Click twice on an item to add it to Dailies (green).",
+    });
     instructionsDiv.createEl("p", { text: "Click a third time to deselect." });
-    
+
     // Create container for Habitica items
-    const itemsContainer = mainContainer.createDiv({ cls: "retrotagger-items" });
-    
+    const itemsContainer = mainContainer.createDiv({
+      cls: "retrotagger-items",
+    });
+
     // Load the glossary to get Habitica keys
     const habiticaKeys = await this.loadHabiticaKeys();
-    
+
     // Create buttons for each Habitica item
     for (const habiticaKey of habiticaKeys) {
       if (!habiticaKey) continue;
-      
+
       const itemButton = itemsContainer.createEl("button", {
         text: habiticaKey,
-        cls: "retrotagger-item"
+        cls: "retrotagger-item",
       });
-      
+
       this.itemButtons[habiticaKey] = itemButton;
-      
+
       itemButton.addEventListener("click", () => {
         this.toggleItemSelection(habiticaKey);
       });
     }
-    
+
     // Create the "Summary" section to preview what will be added
-    const summaryContainer = mainContainer.createDiv({ cls: "retrotagger-summary" });
+    const summaryContainer = mainContainer.createDiv({
+      cls: "retrotagger-summary",
+    });
     summaryContainer.createEl("h3", { text: "Summary" });
-    
-    const achievementsDiv = summaryContainer.createDiv({ cls: "retrotagger-achievements" });
+
+    const achievementsDiv = summaryContainer.createDiv({
+      cls: "retrotagger-achievements",
+    });
     achievementsDiv.createEl("h4", { text: "Achievements to add:" });
-    const achievementsList = achievementsDiv.createEl("ul", { cls: "retrotagger-achievements-list" });
-    
-    const dailiesDiv = summaryContainer.createDiv({ cls: "retrotagger-dailies" });
+    const achievementsList = achievementsDiv.createEl("ul", {
+      cls: "retrotagger-achievements-list",
+    });
+
+    const dailiesDiv = summaryContainer.createDiv({
+      cls: "retrotagger-dailies",
+    });
     dailiesDiv.createEl("h4", { text: "Dailies to add:" });
-    const dailiesList = dailiesDiv.createEl("ul", { cls: "retrotagger-dailies-list" });
-    
+    const dailiesList = dailiesDiv.createEl("ul", {
+      cls: "retrotagger-dailies-list",
+    });
+
     // Add the "Render" button
     const renderButton = mainContainer.createEl("button", {
       text: "Render",
-      cls: "retrotagger-render-button"
+      cls: "retrotagger-render-button",
     });
-    
+
     renderButton.addEventListener("click", async () => {
       await this.renderSelectedItems();
       this.close();
     });
-    
+
     // Add "Cancel" button
     const cancelButton = mainContainer.createEl("button", {
       text: "Cancel",
-      cls: "retrotagger-cancel-button"
+      cls: "retrotagger-cancel-button",
     });
-    
+
     cancelButton.addEventListener("click", () => {
       this.close();
     });
-    
+
     // Add CSS for the RetroTagger UI
     this.addRetroTaggerStyles();
   }
-  
+
   // Load Habitica keys from the glossary
   private async loadHabiticaKeys(): Promise<string[]> {
     const pluginFolder = ".obsidian/plugins/Habsiad";
     const glossaryFileName = "frontmatterGlossary.json";
     const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
-    
+
     try {
       const data = await this.app.vault.adapter.read(glossaryPath);
       const glossaryMapping = JSON.parse(data);
-      
-      // Extract unique Habitica keys (values in the glossary mapping)
-      const habiticaKeys = Object.values(glossaryMapping).filter(value => value !== "");
-      return habiticaKeys as string[];
+
+      // Extract unique Habitica keys, handling both old and new format
+      let habiticaKeys: string[] = [];
+      for (const value of Object.values(glossaryMapping)) {
+        if (typeof value === "string") {
+          // Old format: string values
+          if (value !== "") habiticaKeys.push(value);
+        } else if (typeof value === "object" && value !== null) {
+          // New format: object with habiticaKey property
+          const entry = value as { habiticaKey?: string; isDisabled?: boolean };
+          if (
+            entry.habiticaKey &&
+            entry.habiticaKey !== "" &&
+            !entry.isDisabled
+          ) {
+            habiticaKeys.push(entry.habiticaKey);
+          }
+        }
+      }
+      return habiticaKeys;
     } catch (error) {
       console.error("Error loading glossary:", error);
       return [];
     }
   }
-  
+
   // Toggle item selection between Achievement, Daily, and None
   private toggleItemSelection(key: string) {
     const button = this.itemButtons[key];
-    
+
     if (!this.selectedItems[key]) {
       // First click: Select as Achievement (blue)
       this.selectedItems[key] = "achievement";
@@ -170,18 +210,22 @@ class RetroTaggerModal extends Modal {
       button.removeClass("retrotagger-item-achievement");
       button.removeClass("retrotagger-item-daily");
     }
-    
+
     this.updateSummary();
   }
-  
+
   // Update the summary section with selected items
   private updateSummary() {
-    const achievementsList = this.contentEl.querySelector(".retrotagger-achievements-list") as HTMLElement;
-    const dailiesList = this.contentEl.querySelector(".retrotagger-dailies-list") as HTMLElement;
-    
+    const achievementsList = this.contentEl.querySelector(
+      ".retrotagger-achievements-list"
+    ) as HTMLElement;
+    const dailiesList = this.contentEl.querySelector(
+      ".retrotagger-dailies-list"
+    ) as HTMLElement;
+
     if (achievementsList) achievementsList.empty();
     if (dailiesList) dailiesList.empty();
-    
+
     for (const [key, type] of Object.entries(this.selectedItems)) {
       if (type === "achievement" && achievementsList) {
         achievementsList.createEl("li", { text: key });
@@ -190,7 +234,7 @@ class RetroTaggerModal extends Modal {
       }
     }
   }
-  
+
   // Render the selected items to the journal entry
   private async renderSelectedItems() {
     try {
@@ -199,13 +243,13 @@ class RetroTaggerModal extends Modal {
         new Notice("No file is currently open.");
         return;
       }
-      
+
       let content = await this.app.vault.read(activeFile);
-      
+
       // Group items by type
       const achievements: string[] = [];
       const dailies: string[] = [];
-      
+
       for (const [key, type] of Object.entries(this.selectedItems)) {
         if (type === "achievement") {
           achievements.push(key);
@@ -213,45 +257,64 @@ class RetroTaggerModal extends Modal {
           dailies.push(key);
         }
       }
-      
+
       // Create the new sections
       let newContent = "";
-      
+
       // Check if the file already has the Achievements section
-      const achievementsRegex = new RegExp(`## Achievements on ${this.journalDate}`);
+      const achievementsRegex = new RegExp(
+        `## Achievements on ${this.journalDate}`
+      );
       const hasAchievementsSection = achievementsRegex.test(content);
-      
+
       // Check if the file already has the Completed Dailies section
       const dailiesRegex = /## Completed Dailies/;
       const hasCompletedDailiesSection = dailiesRegex.test(content);
-      
+
       if (achievements.length > 0) {
         if (hasAchievementsSection) {
           // Append to existing Achievements section
-          const achievementsSectionRegex = new RegExp(`(## Achievements on ${this.journalDate}[\\s\\S]*?)(?=\\n##|$)`);
+          const achievementsSectionRegex = new RegExp(
+            `(## Achievements on ${this.journalDate}[\\s\\S]*?)(?=\\n##|$)`
+          );
           const match = content.match(achievementsSectionRegex);
-          
+
           if (match) {
             const existingSection = match[1];
-            const newSection = existingSection + "\n" + achievements.map(item => `* Habit clicked: ${item} - Positive: 1, Negative: 0`).join("\n");
+            const newSection =
+              existingSection +
+              "\n" +
+              achievements
+                .map(
+                  (item) =>
+                    `* Habit clicked: ${item} - Positive: 1, Negative: 0`
+                )
+                .join("\n");
             content = content.replace(existingSection, newSection);
           }
         } else {
           // Create new Achievements section
           newContent += `\n## Achievements on ${this.journalDate}\n`;
-          newContent += achievements.map(item => `* Habit clicked: ${item} - Positive: 1, Negative: 0`).join("\n");
+          newContent += achievements
+            .map(
+              (item) => `* Habit clicked: ${item} - Positive: 1, Negative: 0`
+            )
+            .join("\n");
         }
       }
-      
+
       if (dailies.length > 0) {
         if (hasCompletedDailiesSection) {
           // Append to existing Completed Dailies section
           const dailiesSectionRegex = /## Completed Dailies[\s\S]*?(?=\n##|$)/;
           const match = content.match(dailiesSectionRegex);
-          
+
           if (match) {
             const existingSection = match[0];
-            const newSection = existingSection + "\n" + dailies.map(item => `* ${item}`).join("\n");
+            const newSection =
+              existingSection +
+              "\n" +
+              dailies.map((item) => `* ${item}`).join("\n");
             content = content.replace(existingSection, newSection);
           }
         } else {
@@ -261,25 +324,29 @@ class RetroTaggerModal extends Modal {
           } else {
             newContent += "\n\n## Completed Dailies\n";
           }
-          newContent += dailies.map(item => `* ${item}`).join("\n");
+          newContent += dailies.map((item) => `* ${item}`).join("\n");
         }
       }
-      
+
       // If we didn't modify existing sections, append the new content
-      if (!hasAchievementsSection && !hasCompletedDailiesSection && newContent) {
+      if (
+        !hasAchievementsSection &&
+        !hasCompletedDailiesSection &&
+        newContent
+      ) {
         content += newContent;
       }
-      
+
       // Save the changes
       await this.app.vault.modify(activeFile, content);
-      
+
       new Notice(`Successfully updated journal entry for ${this.journalDate}`);
     } catch (error) {
       console.error("Error rendering selected items:", error);
       new Notice("Error updating journal entry. See console for details.");
     }
   }
-  
+
   // Add CSS styles for the RetroTagger UI
   private addRetroTaggerStyles() {
     const styles = document.createElement("style");
@@ -347,15 +414,15 @@ class RetroTaggerModal extends Modal {
         color: white;
       }
     `;
-    
+
     document.head.appendChild(styles);
   }
-  
+
   onClose() {
     // Clean up styles
     const styleEl = document.getElementById("retrotagger-styles");
     if (styleEl) styleEl.remove();
-    
+
     const { contentEl } = this;
     contentEl.empty();
   }
@@ -364,11 +431,15 @@ class RetroTaggerModal extends Modal {
 export default class HabsiadPlugin extends Plugin {
   public habiticaService!: HabiticaService;
   public settings: HabsiadSettings = DEFAULT_SETTINGS; // ✅ Ensures initialization
+  private settingsSync!: SettingsSync;
 
   async onload() {
     console.log("Loading Habsiad Plugin");
 
-    // Load settings
+    // Initialize settings sync
+    this.settingsSync = new SettingsSync(this);
+
+    // Load settings (with cross-device sync support)
     await this.loadSettings();
 
     // Initialize Habitica Service
@@ -419,7 +490,7 @@ export default class HabsiadPlugin extends Plugin {
       callback: () => this.syncHabiticaToFrontmatter(),
       hotkeys: [this.settings.shortcuts.syncHabiticaToFrontmatter],
     });
-    
+
     // Register the Calculate Calorie Totals command
     this.addCommand({
       id: "calculate-calorie-totals",
@@ -427,13 +498,26 @@ export default class HabsiadPlugin extends Plugin {
       callback: () => this.calculateCalorieTotals(),
       hotkeys: [this.settings.shortcuts.calculateCalorieTotals],
     });
-    
+
     // Register the Retrotagger command
     this.addCommand({
       id: "open-retrotagger",
       name: "Open Retrotagger",
       callback: () => this.openRetrotagger(),
       hotkeys: [this.settings.shortcuts.openRetrotagger],
+    });
+
+    // Register settings sync commands
+    this.addCommand({
+      id: "import-settings-from-sync",
+      name: "Import Settings from Sync File",
+      callback: () => this.settingsSync.importFromSyncFile(),
+    });
+
+    this.addCommand({
+      id: "export-settings-to-sync",
+      name: "Export Settings to Sync File",
+      callback: () => this.settingsSync.exportToSyncFile(),
     });
 
     // Automatically replace {WEEKDAY} when a new file is created in the JOURNAL folder,
@@ -473,13 +557,23 @@ export default class HabsiadPlugin extends Plugin {
   }
 
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const loadedSettings = await this.settingsSync.loadSettings();
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedSettings);
+
+    // Migration: Ensure alcohol tab is enabled by default if it doesn't exist
+    if (
+      this.settings.showTabs &&
+      this.settings.showTabs.alcohol === undefined
+    ) {
+      this.settings.showTabs.alcohol = true;
+      await this.saveSettings();
+    }
   }
 
   async saveSettings() {
-    await this.saveData(this.settings);
+    await this.settingsSync.saveSettings(this.settings);
   }
-  
+
   /**
    * Opens the RetroTagger modal for the current journal entry.
    * Allows users to retroactively add achievements and dailies to journal entries.
@@ -611,7 +705,7 @@ export default class HabsiadPlugin extends Plugin {
     // Save the updated file
     await this.app.vault.modify(file, newContent);
   }
-  
+
   /**
    * Updates the "weight" field inside the frontmatter of a journal entry.
    * If frontmatter exists, modifies the "weight" field.
@@ -629,9 +723,9 @@ export default class HabsiadPlugin extends Plugin {
       const frontmatterText = match[1];
 
       // Check if the "weight" field already exists
-      const hasWeightField = frontmatterText.split("\n").some(line => 
-        line.startsWith("weight:")
-      );
+      const hasWeightField = frontmatterText
+        .split("\n")
+        .some((line) => line.startsWith("weight:"));
 
       if (hasWeightField) {
         // Modify the existing "weight" value
@@ -662,7 +756,7 @@ export default class HabsiadPlugin extends Plugin {
     // Save the updated file
     await this.app.vault.modify(file, newContent);
   }
-  
+
   /**
    * Updates the "calories" field inside the frontmatter of a journal entry.
    * If frontmatter exists, modifies the "calories" field.
@@ -680,9 +774,9 @@ export default class HabsiadPlugin extends Plugin {
       const frontmatterText = match[1];
 
       // Check if the "calories" field already exists
-      const hasCaloriesField = frontmatterText.split("\n").some(line => 
-        line.startsWith("calories:")
-      );
+      const hasCaloriesField = frontmatterText
+        .split("\n")
+        .some((line) => line.startsWith("calories:"));
 
       if (hasCaloriesField) {
         // Modify the existing "calories" value
@@ -699,7 +793,8 @@ export default class HabsiadPlugin extends Plugin {
         );
       } else {
         // Add the "calories" field to the existing frontmatter
-        const updatedFrontmatter = frontmatterText + `\ncalories: ${newCalories}`;
+        const updatedFrontmatter =
+          frontmatterText + `\ncalories: ${newCalories}`;
         newContent = content.replace(
           frontmatterRegex,
           `---\n${updatedFrontmatter}\n---`
@@ -713,14 +808,15 @@ export default class HabsiadPlugin extends Plugin {
     // Save the updated file
     await this.app.vault.modify(file, newContent);
   }
-  
+
   /**
    * Calculates calorie totals by properly parsing the EST.CALORIES column in markdown tables
    * and updating the calories frontmatter key with the sum.
    */
   async calculateCalorieTotals() {
     const journalFolderName = this.settings.journalFolderName || "Journal";
-    const journalFolder = this.app.vault.getAbstractFileByPath(journalFolderName);
+    const journalFolder =
+      this.app.vault.getAbstractFileByPath(journalFolderName);
 
     if (!journalFolder || !(journalFolder instanceof TFolder)) {
       new Notice(`Journal folder "${journalFolderName}" not found.`);
@@ -729,12 +825,15 @@ export default class HabsiadPlugin extends Plugin {
 
     // Get all journal files with YYYY-MM-DD.md format
     const journalFiles = journalFolder.children
-      .filter((file) => file instanceof TFile && file.name.match(/^\d{4}-\d{2}-\d{2}\.md$/))
+      .filter(
+        (file) =>
+          file instanceof TFile && file.name.match(/^\d{4}-\d{2}-\d{2}\.md$/)
+      )
       .sort((a, b) => b.name.localeCompare(a.name)) as TFile[]; // Sort by date descending
 
     let filesProcessed = 0;
     let filesUpdated = 0;
-    
+
     // Function to debug print a raw markdown table for inspection
     const debugPrintTable = (tableName: string, tableText: string) => {
       console.log(`\n--- ${tableName} ---`);
@@ -745,32 +844,36 @@ export default class HabsiadPlugin extends Plugin {
     for (const file of journalFiles) {
       filesProcessed++;
       const content = await this.app.vault.read(file);
-      
+
       // Very specific approach: Look for a markdown table that has EST.CALORIES in the header
       // The crucial part is to properly parse the table structure with vertical bars
       // Start by looking at the content line by line, but preserve the exact format of each line
-      const lines = content.split('\n');
+      const lines = content.split("\n");
       let foundCalorieTable = false;
       let calorieTableLines: string[] = [];
       let tableStartLine = 0;
-      
+
       // First find a table with EST.CALORIES in the header
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         // Look for a header row that contains EST.CALORIES
-        if (line.includes("EST.CALORIES") && line.startsWith("|") && line.endsWith("|")) {
+        if (
+          line.includes("EST.CALORIES") &&
+          line.startsWith("|") &&
+          line.endsWith("|")
+        ) {
           foundCalorieTable = true;
           tableStartLine = i;
           break;
         }
       }
-      
+
       if (!foundCalorieTable) {
         // No calorie table found in this file
         console.log(`No table with EST.CALORIES found in ${file.name}`);
         continue;
       }
-      
+
       // Now extract the complete table
       let tableEndLine = tableStartLine;
       for (let i = tableStartLine; i < lines.length; i++) {
@@ -783,73 +886,83 @@ export default class HabsiadPlugin extends Plugin {
           break;
         }
       }
-      
+
       // Make sure we have a header and at least one data row
       if (calorieTableLines.length < 3) {
-        console.log(`Table too short in ${file.name}, found ${calorieTableLines.length} lines`);
+        console.log(
+          `Table too short in ${file.name}, found ${calorieTableLines.length} lines`
+        );
         continue;
       }
-      
-      const tableText = calorieTableLines.join('\n');
+
+      const tableText = calorieTableLines.join("\n");
       debugPrintTable(`Table in ${file.name}`, tableText);
-      
+
       // Parse the header to find the column index for EST.CALORIES
       const headerLine = calorieTableLines[0];
-      const headerCells = headerLine.split('|').map(cell => cell.trim());
-      
+      const headerCells = headerLine.split("|").map((cell) => cell.trim());
+
       // Find the index of the EST.CALORIES column (accounting for the empty cells at start/end)
       let estCaloriesColumnIndex = -1;
       for (let i = 0; i < headerCells.length; i++) {
-        if (headerCells[i].toUpperCase() === 'EST.CALORIES') {
+        if (headerCells[i].toUpperCase() === "EST.CALORIES") {
           estCaloriesColumnIndex = i;
           break;
         }
       }
-      
+
       if (estCaloriesColumnIndex === -1) {
-        console.log(`Could not find EST.CALORIES column in header: ${headerLine}`);
+        console.log(
+          `Could not find EST.CALORIES column in header: ${headerLine}`
+        );
         continue;
       }
-      
-      console.log(`EST.CALORIES column is at index ${estCaloriesColumnIndex} in ${file.name}`);
-      
+
+      console.log(
+        `EST.CALORIES column is at index ${estCaloriesColumnIndex} in ${file.name}`
+      );
+
       // Now process each data row (skipping header and separator)
       let totalCalories = 0;
-      
+
       for (let i = 2; i < calorieTableLines.length; i++) {
         const dataLine = calorieTableLines[i];
-        const dataCells = dataLine.split('|');
-        
+        const dataCells = dataLine.split("|");
+
         // Ensure the array has enough elements to access the EST.CALORIES column
         if (dataCells.length <= estCaloriesColumnIndex) {
           console.log(`Row has insufficient columns: ${dataLine}`);
           continue;
         }
-        
+
         // Get the actual cell content at the EST.CALORIES position
         const calorieCell = dataCells[estCaloriesColumnIndex].trim();
-        
+
         console.log(`Processing cell: "${calorieCell}" in ${file.name}`);
-        
+
         // Skip empty cells or cells with just whitespace
-        if (!calorieCell || calorieCell === '') {
+        if (!calorieCell || calorieCell === "") {
           console.log(`Empty calorie cell in row: ${dataLine}`);
           continue;
         }
-        
+
         // Try to extract a number from the cell
         // This regex looks for one or more digits, ignoring any surrounding text
         const numberMatch = calorieCell.match(/\d+/);
-        
+
         if (numberMatch) {
           const calories = parseInt(numberMatch[0], 10);
           if (!isNaN(calories) && calories > 0) {
-            console.log(`Found ${calories} calories in ${file.name} at line ${tableStartLine + i}`);
+            console.log(
+              `Found ${calories} calories in ${file.name} at line ${
+                tableStartLine + i
+              }`
+            );
             totalCalories += calories;
           }
         }
       }
-      
+
       if (totalCalories > 0) {
         console.log(`Total calories in ${file.name}: ${totalCalories}`);
         // Update the frontmatter with the calculated total
@@ -859,11 +972,15 @@ export default class HabsiadPlugin extends Plugin {
         console.log(`No valid calories found in ${file.name}`);
       }
     }
-    
+
     if (filesUpdated > 0) {
-      new Notice(`Updated calorie totals in ${filesUpdated} of ${filesProcessed} journal files.`);
+      new Notice(
+        `Updated calorie totals in ${filesUpdated} of ${filesProcessed} journal files.`
+      );
     } else {
-      new Notice(`No valid calorie data found. Checked ${filesProcessed} journal files.`);
+      new Notice(
+        `No valid calorie data found. Checked ${filesProcessed} journal files.`
+      );
     }
   }
 
@@ -1088,7 +1205,8 @@ export default class HabsiadPlugin extends Plugin {
    */
   async syncHabiticaToFrontmatter() {
     const journalFolderName = this.settings.journalFolderName || "Journal";
-    const journalFolder = this.app.vault.getAbstractFileByPath(journalFolderName);
+    const journalFolder =
+      this.app.vault.getAbstractFileByPath(journalFolderName);
 
     if (!journalFolder || !(journalFolder instanceof TFolder)) {
       new Notice(`Journal folder "${journalFolderName}" not found.`);
@@ -1099,92 +1217,119 @@ export default class HabsiadPlugin extends Plugin {
     const pluginFolder = ".obsidian/plugins/Habsiad";
     const glossaryFileName = "frontmatterGlossary.json";
     const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
-    
-    let glossaryMapping: { [key: string]: string } = {};
+
+    let glossaryMapping: { [key: string]: any } = {};
     try {
       const data = await this.app.vault.adapter.read(glossaryPath);
       glossaryMapping = JSON.parse(data);
     } catch (error) {
-      new Notice("Could not read frontmatter glossary. Please set up glossary first.");
+      new Notice(
+        "Could not read frontmatter glossary. Please set up glossary first."
+      );
       console.error("Error reading glossary:", error);
       return;
     }
 
     // Create a reverse mapping (Habitica key -> frontmatter key)
     const reverseMapping: { [key: string]: string } = {};
-    for (const [frontmatterKey, habiticaKey] of Object.entries(glossaryMapping)) {
+    for (const [frontmatterKey, value] of Object.entries(glossaryMapping)) {
+      let habiticaKey = "";
+      if (typeof value === "string") {
+        // Old format: string values
+        habiticaKey = value;
+      } else if (typeof value === "object" && value !== null) {
+        // New format: object with habiticaKey property
+        const entry = value as { habiticaKey?: string; isDisabled?: boolean };
+        if (!entry.isDisabled) {
+          habiticaKey = entry.habiticaKey || "";
+        }
+      }
+
       if (habiticaKey) {
         reverseMapping[habiticaKey] = frontmatterKey;
       }
     }
 
     // Process all journal files
-    const filteredFiles = journalFolder.children
-      .filter((file: TAbstractFile) => file instanceof TFile && file.name.match(/^\d{4}-\d{2}-\d{2}\.md$/)) as TFile[];
-      
-    const journalFiles = filteredFiles
-      .sort((a: TFile, b: TFile) => b.name.localeCompare(a.name)); // Sort by date descending
+    const filteredFiles = journalFolder.children.filter(
+      (file: TAbstractFile) =>
+        file instanceof TFile && file.name.match(/^\d{4}-\d{2}-\d{2}\.md$/)
+    ) as TFile[];
+
+    const journalFiles = filteredFiles.sort((a: TFile, b: TFile) =>
+      b.name.localeCompare(a.name)
+    ); // Sort by date descending
 
     let filesProcessed = 0;
     let filesUpdated = 0;
-    
+
     for (const file of journalFiles) {
       filesProcessed++;
       const content = await this.app.vault.read(file);
-      
+
       // Check if the file has the required headers
       const achievementsHeaderRegex = /^## Achievements on \d{4}-\d{2}-\d{2}/m;
       const dailiesHeaderRegex = /^## Completed Dailies/m;
-      
-      if (!achievementsHeaderRegex.test(content) && !dailiesHeaderRegex.test(content)) {
+
+      if (
+        !achievementsHeaderRegex.test(content) &&
+        !dailiesHeaderRegex.test(content)
+      ) {
         continue; // Skip this file if it doesn't have the required headers
       }
-      
+
       // Extract the habit counter values and completed dailies from the content
       const habitCounters: { [key: string]: number } = {};
       const completedDailies: string[] = [];
-      
+
       // Extract habit counters (e.g., "Habit clicked: Act of Love 💖 - Positive: 2, Negative: 0")
-      const habitRegex = /\* Habit clicked: (.*?) - Positive: (\d+), Negative: (\d+)/g;
+      const habitRegex =
+        /\* Habit clicked: (.*?) - Positive: (\d+), Negative: (\d+)/g;
       let habitMatch;
       while ((habitMatch = habitRegex.exec(content)) !== null) {
         const habitName = habitMatch[1];
         const positiveCount = parseInt(habitMatch[2], 10) || 0;
         const negativeCount = parseInt(habitMatch[3], 10) || 0;
         const netCount = positiveCount - negativeCount;
-        
+
         // Store the habit by its full name for matching purposes
         habitCounters[habitName] = netCount;
       }
-      
+
       // Extract completed dailies (e.g., "* Daily Name")
-      const dailiesSection = content.match(/## Completed Dailies\n([\s\S]*?)(?=\n##|$)/);
+      const dailiesSection = content.match(
+        /## Completed Dailies\n([\s\S]*?)(?=\n##|$)/
+      );
       if (dailiesSection && dailiesSection[1]) {
-        const dailiesList = dailiesSection[1].trim().split('\n');
-        dailiesList.forEach(daily => {
-          if (daily.startsWith('* ')) {
+        const dailiesList = dailiesSection[1].trim().split("\n");
+        dailiesList.forEach((daily) => {
+          if (daily.startsWith("* ")) {
             completedDailies.push(daily.substring(2).trim());
           }
         });
       }
-      
+
       // Update frontmatter based on glossary mapping
       let frontmatterUpdates: { [key: string]: number } = {};
-      
+
       // Process habits based on Habitica keys in glossary
       for (const [habitName, netCount] of Object.entries(habitCounters)) {
         // Look through all Habitica keys to find a match
-        for (const [habiticaKey, frontmatterKey] of Object.entries(reverseMapping)) {
+        for (const [habiticaKey, frontmatterKey] of Object.entries(
+          reverseMapping
+        )) {
           if (habitName.includes(habiticaKey)) {
             frontmatterUpdates[frontmatterKey] = netCount;
             break;
           }
         }
       }
-      
+
       // Process dailies based on Habitica keys in glossary
       for (const dailyName of completedDailies) {
-        for (const [habiticaKey, frontmatterKey] of Object.entries(reverseMapping)) {
+        for (const [habiticaKey, frontmatterKey] of Object.entries(
+          reverseMapping
+        )) {
           if (dailyName.includes(habiticaKey)) {
             // For completed dailies, set the value to 1
             frontmatterUpdates[frontmatterKey] = 1;
@@ -1192,40 +1337,42 @@ export default class HabsiadPlugin extends Plugin {
           }
         }
       }
-      
+
       // If we have updates to make, update the frontmatter
       if (Object.keys(frontmatterUpdates).length > 0) {
         await this.updateFrontmatterValues(file, frontmatterUpdates);
         filesUpdated++;
       }
     }
-    
+
     if (filesUpdated > 0) {
-      new Notice(`Updated frontmatter in ${filesUpdated} of ${filesProcessed} journal files.`);
+      new Notice(
+        `Updated frontmatter in ${filesUpdated} of ${filesProcessed} journal files.`
+      );
     } else {
       new Notice(`No updates needed. Checked ${filesProcessed} journal files.`);
     }
   }
-  
+
   /**
    * Updates multiple frontmatter values in a file.
    */
   async updateFrontmatterValues(file: TFile, updates: { [key: string]: any }) {
     let content = await this.app.vault.read(file);
-    
+
     // Locate frontmatter section
     const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
     const match = content.match(frontmatterRegex);
     let newContent;
-    
+
     if (match) {
       let frontmatterText = match[1];
-      const frontmatterLines = frontmatterText.split('\n');
+      const frontmatterLines = frontmatterText.split("\n");
       const updatedLines = [...frontmatterLines];
-      
+
       // Track which keys we've updated
       const updatedKeys = new Set<string>();
-      
+
       // Update existing frontmatter lines
       for (let i = 0; i < frontmatterLines.length; i++) {
         const line = frontmatterLines[i];
@@ -1237,25 +1384,27 @@ export default class HabsiadPlugin extends Plugin {
           }
         }
       }
-      
+
       // Add new frontmatter lines for keys not found
       for (const [key, value] of Object.entries(updates)) {
         if (!updatedKeys.has(key)) {
           updatedLines.push(`${key}: ${value}`);
         }
       }
-      
+
       // Replace the frontmatter block
       newContent = content.replace(
         frontmatterRegex,
-        `---\n${updatedLines.join('\n')}\n---`
+        `---\n${updatedLines.join("\n")}\n---`
       );
     } else {
       // If no frontmatter exists, create it
-      const frontmatterLines = Object.entries(updates).map(([key, value]) => `${key}: ${value}`);
-      newContent = `---\n${frontmatterLines.join('\n')}\n---\n\n${content}`;
+      const frontmatterLines = Object.entries(updates).map(
+        ([key, value]) => `${key}: ${value}`
+      );
+      newContent = `---\n${frontmatterLines.join("\n")}\n---\n\n${content}`;
     }
-    
+
     // Save the updated file
     await this.app.vault.modify(file, newContent);
   }

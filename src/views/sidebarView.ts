@@ -3,6 +3,7 @@ import HabsiadPlugin from "../main"; // Ensure the path matches your project str
 
 import { displayGlossaryTable } from "./tabs/frontmatterGlossary";
 import { DataQualityDiagnosticsView } from "./tabs/dataQualityDiagnostics";
+import { AlcoholTab } from "./tabs/alcoholTab";
 
 export const VIEW_TYPE_SIDEBAR = "habsiad-sidebar-view";
 
@@ -56,6 +57,13 @@ export class SidebarView extends ItemView {
         label: "Calories",
         optional: true,
         settingKey: "calories",
+      },
+      {
+        emoji: "🍷",
+        view: "alcohol",
+        label: "Alcohol",
+        optional: true,
+        settingKey: "alcohol",
       },
     ];
 
@@ -127,6 +135,9 @@ export class SidebarView extends ItemView {
         break;
       case "calories":
         this.displayCaloriesTab(container);
+        break;
+      case "alcohol":
+        this.displayAlcoholTab(container);
         break;
       default:
         container.setText("Default View");
@@ -351,6 +362,11 @@ export class SidebarView extends ItemView {
         await this.plugin.updateCaloriesFrontmatter(file, newCalories);
       });
     }
+  }
+
+  private async displayAlcoholTab(container: HTMLElement) {
+    const alcoholTab = new AlcoholTab(this.app, this.plugin);
+    await alcoholTab.render(container);
   }
 
   private displayInfoTab(container: HTMLElement) {

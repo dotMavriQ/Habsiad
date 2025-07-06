@@ -24,6 +24,7 @@ export interface HabsiadSettings {
     steps: boolean;
     weight: boolean;
     calories: boolean;
+    alcohol: boolean;
   };
 }
 
@@ -45,6 +46,7 @@ export const DEFAULT_SETTINGS: HabsiadSettings = {
     steps: true,
     weight: true,
     calories: true,
+    alcohol: true,
   },
 };
 
@@ -103,45 +105,52 @@ export class HabsiadSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           })
       );
-      
+
     // Add a section for keyboard shortcuts
     containerEl.createEl("h3", { text: "Keyboard Shortcuts" });
-    
+
     // Helper function to create a shortcut setting
     const createShortcutSetting = (
       id: keyof HabsiadSettings["shortcuts"],
       name: string,
       desc: string
     ) => {
-      const setting = new Setting(containerEl)
-        .setName(name)
-        .setDesc(desc);
-      
+      const setting = new Setting(containerEl).setName(name).setDesc(desc);
+
       // Add dropdown for modifier keys
       setting.addDropdown((dropdown) => {
         const options = {
-          "none": "None",
-          "Mod": "Ctrl/Cmd",
+          none: "None",
+          Mod: "Ctrl/Cmd",
           "Mod+Shift": "Ctrl/Cmd+Shift",
           "Mod+Alt": "Ctrl/Cmd+Alt",
-          "Alt": "Alt",
-          "Alt+Shift": "Alt+Shift"
+          Alt: "Alt",
+          "Alt+Shift": "Alt+Shift",
         };
-        
+
         const currentModifiers = this.plugin.settings.shortcuts[id].modifiers;
         let currentValue = "none";
-        if (currentModifiers.includes("Mod") && currentModifiers.includes("Shift")) {
+        if (
+          currentModifiers.includes("Mod") &&
+          currentModifiers.includes("Shift")
+        ) {
           currentValue = "Mod+Shift";
-        } else if (currentModifiers.includes("Mod") && currentModifiers.includes("Alt")) {
+        } else if (
+          currentModifiers.includes("Mod") &&
+          currentModifiers.includes("Alt")
+        ) {
           currentValue = "Mod+Alt";
-        } else if (currentModifiers.includes("Alt") && currentModifiers.includes("Shift")) {
+        } else if (
+          currentModifiers.includes("Alt") &&
+          currentModifiers.includes("Shift")
+        ) {
           currentValue = "Alt+Shift";
         } else if (currentModifiers.includes("Mod")) {
           currentValue = "Mod";
         } else if (currentModifiers.includes("Alt")) {
           currentValue = "Alt";
         }
-        
+
         dropdown
           .addOptions(options)
           .setValue(currentValue)
@@ -153,15 +162,18 @@ export class HabsiadSettingTab extends PluginSettingTab {
               modifiers = ["Mod", "Alt"];
             } else if (value === "Alt+Shift") {
               modifiers = ["Alt", "Shift"];
-            } else if (value !== "none" && (value === "Mod" || value === "Alt")) {
+            } else if (
+              value !== "none" &&
+              (value === "Mod" || value === "Alt")
+            ) {
               modifiers = [value];
             }
-            
+
             this.plugin.settings.shortcuts[id].modifiers = modifiers;
             await this.plugin.saveSettings();
           });
       });
-      
+
       // Add text field for key
       setting.addText((text) => {
         text
@@ -174,59 +186,59 @@ export class HabsiadSettingTab extends PluginSettingTab {
             }
           });
       });
-      
+
       return setting;
     };
-    
+
     // Create settings for each shortcut
     createShortcutSetting(
       "generateHabitsAndDailies",
       "Generate Habits & Dailies",
       "Shortcut to insert Habitica habits and dailies into the current note."
     );
-    
+
     createShortcutSetting(
       "replaceWeekday",
       "Replace {WEEKDAY}",
       "Shortcut to replace {WEEKDAY} with the actual day of the week."
     );
-    
+
     createShortcutSetting(
       "syncTodo",
       "Sync Habitica TODO",
       "Shortcut to sync Habitica TODOs to the current note."
     );
-    
+
     createShortcutSetting(
       "syncHabiticaToFrontmatter",
       "Sync Habitica to Frontmatter",
       "Shortcut to sync Habitica data to frontmatter in journal files."
     );
-    
+
     createShortcutSetting(
       "calculateCalorieTotals",
       "Calculate Calorie Totals",
       "Shortcut to calculate and update calorie totals in journal files."
     );
-    
+
     createShortcutSetting(
       "openRetrotagger",
       "Open Retrotagger",
       "Shortcut to open the Retrotagger tool for adding achievements and dailies to journal entries."
     );
-    
+
     // Optional Tabs Section
     containerEl.createEl("h3", { text: "Optional Tabs" });
-    containerEl.createEl("p", { 
+    containerEl.createEl("p", {
       text: "Choose which tabs to show in the sidebar. Changes will take effect after reloading the plugin.",
-      cls: "setting-item-description" 
+      cls: "setting-item-description",
     });
-    
+
     // Steps Tab Toggle
     new Setting(containerEl)
       .setName("Show Steps Tab")
       .setDesc("Enable or disable the Steps tab in the sidebar.")
-      .addToggle(toggle => 
+      .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.showTabs.steps)
           .onChange(async (value) => {
@@ -234,12 +246,12 @@ export class HabsiadSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           })
       );
-      
+
     // Weight Tab Toggle
     new Setting(containerEl)
       .setName("Show Weight Tab")
       .setDesc("Enable or disable the Weight tab in the sidebar.")
-      .addToggle(toggle => 
+      .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.showTabs.weight)
           .onChange(async (value) => {
@@ -247,12 +259,12 @@ export class HabsiadSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           })
       );
-      
+
     // Calories Tab Toggle
     new Setting(containerEl)
       .setName("Show Calories Tab")
       .setDesc("Enable or disable the Calories tab in the sidebar.")
-      .addToggle(toggle => 
+      .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.showTabs.calories)
           .onChange(async (value) => {
@@ -260,5 +272,88 @@ export class HabsiadSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           })
       );
+
+    // Alcohol Tab Toggle
+    new Setting(containerEl)
+      .setName("Show Alcohol Tab")
+      .setDesc("Enable or disable the Alcohol tab in the sidebar.")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.showTabs.alcohol)
+          .onChange(async (value) => {
+            this.plugin.settings.showTabs.alcohol = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    // Settings Sync Section
+    containerEl.createEl("h3", { text: "Settings Synchronization" });
+    containerEl.createEl("p", {
+      text: "Sync your settings across devices through your Obsidian vault. Settings are automatically backed up to a sync file when changed.",
+      cls: "setting-item-description",
+    });
+
+    // Sync Status Display
+    const syncStatusDiv = containerEl.createDiv({
+      cls: "setting-item-description",
+    });
+    this.updateSyncStatus(syncStatusDiv);
+
+    // Manual sync controls
+    new Setting(containerEl)
+      .setName("Export Settings to Sync File")
+      .setDesc(
+        "Manually save current settings to sync file for cross-device synchronization."
+      )
+      .addButton((button) =>
+        button
+          .setButtonText("Export Now")
+          .setCta()
+          .onClick(async () => {
+            const success = await (
+              this.plugin as any
+            ).settingsSync.exportToSyncFile();
+            if (success) {
+              this.updateSyncStatus(syncStatusDiv);
+            }
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Import Settings from Sync File")
+      .setDesc(
+        "Restore settings from sync file. This will overwrite current settings."
+      )
+      .addButton((button) =>
+        button
+          .setButtonText("Import Now")
+          .setWarning()
+          .onClick(async () => {
+            const success = await (
+              this.plugin as any
+            ).settingsSync.importFromSyncFile();
+            if (success) {
+              this.display(); // Refresh the settings display
+            }
+          })
+      );
+  }
+
+  private async updateSyncStatus(statusDiv: HTMLElement) {
+    statusDiv.empty();
+    const settingsSync = (this.plugin as any).settingsSync;
+    const syncFileExists = await settingsSync.syncFileExists();
+
+    if (syncFileExists) {
+      statusDiv.createEl("span", {
+        text: "✅ Sync file exists - settings will sync across devices",
+        cls: "mod-success",
+      });
+    } else {
+      statusDiv.createEl("span", {
+        text: "⚠️ No sync file found - click 'Export Now' to create one",
+        cls: "mod-warning",
+      });
+    }
   }
 }

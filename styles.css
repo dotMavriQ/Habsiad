@@ -285,4 +285,141 @@ button,
   outline-offset: 2px;
 }
 
+/* Frontmatter Glossary enhancements */
+.clickable-frontmatter-key {
+  cursor: pointer !important;
+  transition: all 0.2s ease;
+  padding: 4px 8px;
+  border-radius: 4px;
+  user-select: none;
+}
+
+.clickable-frontmatter-key:hover {
+  background-color: var(--background-modifier-hover);
+  transform: scale(1.02);
+}
+
+.clickable-frontmatter-key:active {
+  transform: scale(0.98);
+}
+
+/* Styling for locked input fields */
+.habsiad-glossary-table input:disabled,
+.obsitica-glossary-table input:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Enhanced tooltip styling */
+.clickable-frontmatter-key[title]:hover {
+  position: relative;
+}
+
+.clickable-frontmatter-key[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--background-tooltip);
+  color: var(--text-on-accent);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  opacity: 0;
+  animation: fadeInTooltip 0.3s ease forwards;
+}
+
+@keyframes fadeInTooltip {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Protected entries in frontmatter glossary */
+.protected-entry {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  background-color: var(--background-modifier-border) !important;
+  color: var(--text-muted) !important;
+}
+
+.protected-entry:hover {
+  background-color: var(--background-modifier-border) !important;
+  transform: none !important;
+}
+
+/* Alcohol tab specific styles */
+.habsiad-alcohol-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.habsiad-alcohol-table th,
+.habsiad-alcohol-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.habsiad-alcohol-table th {
+  background-color: var(--background-secondary);
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.habsiad-clickable-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.habsiad-clickable-row:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.habsiad-date-link {
+  color: var(--text-accent);
+  font-weight: 500;
+}
+
+.habsiad-alcohol-emojis {
+  font-size: 18px;
+  letter-spacing: 2px;
+}
+
+.habsiad-tab-description {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: var(--background-secondary);
+  border-radius: 4px;
+}
+
+.habsiad-no-data {
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+  background-color: var(--background-secondary);
+  border-radius: 4px;
+}
+
+.habsiad-error-message {
+  color: var(--text-error);
+  font-weight: 500;
+  padding: 10px;
+  background-color: var(--background-secondary);
+  border-radius: 4px;
+  border-left: 4px solid var(--text-error);
+}
+
 
