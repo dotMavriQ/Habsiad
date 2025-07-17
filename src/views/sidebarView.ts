@@ -39,6 +39,13 @@ export class SidebarView extends ItemView {
       { emoji: "🔎", view: "diagnostics", label: "Data Quality Diagnostics" },
       { emoji: "⬆️", view: "glossary", label: "Frontmatter Glossary" },
       {
+        emoji: "🏷️",
+        view: "labels",
+        label: "Labels",
+        optional: true,
+        settingKey: "labels",
+      },
+      {
         emoji: "👟",
         view: "steps",
         label: "Steps",
@@ -65,13 +72,6 @@ export class SidebarView extends ItemView {
         label: "Alcohol",
         optional: true,
         settingKey: "alcohol",
-      },
-      {
-        emoji: "🏷️",
-        view: "labels",
-        label: "Labels",
-        optional: true,
-        settingKey: "labels",
       },
     ];
 
