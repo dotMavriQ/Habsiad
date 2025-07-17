@@ -5,6 +5,7 @@ import { displayGlossaryTable } from "./tabs/frontmatterGlossary";
 import { DataQualityDiagnosticsView } from "./tabs/dataQualityDiagnostics";
 import { AlcoholTab } from "./tabs/alcoholTab";
 import { LabelsTab } from "./tabs/labelsTab";
+import { LogsTab } from "./tabs/logsTab";
 
 export const VIEW_TYPE_SIDEBAR = "habsiad-sidebar-view";
 
@@ -38,13 +39,8 @@ export class SidebarView extends ItemView {
       { emoji: "🏡", view: "info", label: "Home" },
       { emoji: "🔎", view: "diagnostics", label: "Data Quality Diagnostics" },
       { emoji: "⬆️", view: "glossary", label: "Frontmatter Glossary" },
-      {
-        emoji: "🏷️",
-        view: "labels",
-        label: "Labels",
-        optional: true,
-        settingKey: "labels",
-      },
+      { emoji: "🏷️", view: "labels", label: "Labels" },
+      { emoji: "\u{1F4D4}", view: "logs", label: "Logs" },
       {
         emoji: "👟",
         view: "steps",
@@ -149,6 +145,9 @@ export class SidebarView extends ItemView {
         break;
       case "labels":
         this.displayLabelsTab(container);
+        break;
+      case "logs":
+        this.displayLogsTab(container);
         break;
       default:
         container.setText("Default View");
@@ -383,6 +382,11 @@ export class SidebarView extends ItemView {
   private async displayLabelsTab(container: HTMLElement) {
     const labelsTab = new LabelsTab(this.plugin, container);
     await labelsTab.render();
+  }
+
+  private async displayLogsTab(container: HTMLElement) {
+    const logsTab = new LogsTab(this.plugin, container);
+    await logsTab.render();
   }
 
   private displayInfoTab(container: HTMLElement) {

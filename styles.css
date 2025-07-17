@@ -624,4 +624,225 @@ button,
   border: 1px solid var(--background-modifier-border);
 }
 
+/* Logs tab specific styles */
+.logs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.log-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px;
+  border: 2px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background-color: var(--background-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 80px;
+}
+
+.log-button:hover {
+  background-color: var(--background-modifier-hover);
+  border-color: var(--text-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.log-type {
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--text-normal);
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.log-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.log-entries-container {
+  margin: 16px 0;
+}
+
+.entries-header {
+  margin-bottom: 16px;
+  color: var(--text-normal);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.entries-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.entry-card {
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.entry-card:hover {
+  background-color: var(--background-modifier-hover);
+  border-color: var(--text-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.entry-date-button {
+  padding: 6px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.entry-date-button:hover {
+  background-color: var(--text-accent);
+  color: var(--text-on-accent);
+  border-color: var(--text-accent);
+}
+
+.entry-title {
+  margin: 0 0 8px 0;
+  color: var(--text-normal);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.entry-content {
+  margin-top: 12px;
+}
+
+.entry-image {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.entry-image img, .log-entry-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  object-fit: cover;
+  display: block;
+  border: 2px solid var(--background-modifier-border);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.entry-image img:hover, .log-entry-image:hover {
+  transform: scale(1.05);
+  border-color: var(--text-accent);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.entry-text {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.logs-header {
+  margin-bottom: 16px;
+}
+
+.logs-title {
+  margin: 0 0 8px 0;
+  color: var(--text-normal);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.logs-description {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.logs-empty {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--text-muted);
+  font-style: italic;
+  background-color: var(--background-secondary);
+  border-radius: 8px;
+  border: 1px dashed var(--background-modifier-border);
+}
+
+.logs-back-button {
+  padding: 8px 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background-color: var(--background-secondary);
+  color: var(--text-normal);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.logs-back-button:hover {
+  background-color: var(--background-modifier-hover);
+  border-color: var(--text-accent);
+  transform: translateX(-2px);
+}
+
+/* Mobile responsive for logs */
+@media (max-width: 768px) {
+  .entries-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .logs-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+  
+  .entry-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .entry-date-button {
+    align-self: flex-start;
+  }
+  
+  /* Smaller images on mobile */
+  .entry-image img, .log-entry-image {
+    width: 100px;
+    height: 100px;
+  }
+}
+
 
