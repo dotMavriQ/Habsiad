@@ -728,6 +728,12 @@ export default class HabsiadPlugin extends Plugin {
       this.settings.showTabs.alcohol = true;
       await this.saveSettings();
     }
+
+    // Migration: Ensure labels tab is enabled by default if it doesn't exist
+    if (this.settings.showTabs && this.settings.showTabs.labels === undefined) {
+      this.settings.showTabs.labels = true;
+      await this.saveSettings();
+    }
   }
 
   async saveSettings() {

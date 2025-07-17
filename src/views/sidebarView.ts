@@ -4,6 +4,7 @@ import HabsiadPlugin from "../main"; // Ensure the path matches your project str
 import { displayGlossaryTable } from "./tabs/frontmatterGlossary";
 import { DataQualityDiagnosticsView } from "./tabs/dataQualityDiagnostics";
 import { AlcoholTab } from "./tabs/alcoholTab";
+import { LabelsTab } from "./tabs/labelsTab";
 
 export const VIEW_TYPE_SIDEBAR = "habsiad-sidebar-view";
 
@@ -64,6 +65,13 @@ export class SidebarView extends ItemView {
         label: "Alcohol",
         optional: true,
         settingKey: "alcohol",
+      },
+      {
+        emoji: "🏷️",
+        view: "labels",
+        label: "Labels",
+        optional: true,
+        settingKey: "labels",
       },
     ];
 
@@ -138,6 +146,9 @@ export class SidebarView extends ItemView {
         break;
       case "alcohol":
         this.displayAlcoholTab(container);
+        break;
+      case "labels":
+        this.displayLabelsTab(container);
         break;
       default:
         container.setText("Default View");
@@ -367,6 +378,11 @@ export class SidebarView extends ItemView {
   private async displayAlcoholTab(container: HTMLElement) {
     const alcoholTab = new AlcoholTab(this.app, this.plugin);
     await alcoholTab.render(container);
+  }
+
+  private async displayLabelsTab(container: HTMLElement) {
+    const labelsTab = new LabelsTab(this.plugin, container);
+    await labelsTab.render();
   }
 
   private displayInfoTab(container: HTMLElement) {

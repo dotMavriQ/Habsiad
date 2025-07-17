@@ -468,4 +468,160 @@ button,
   border-left: 4px solid var(--text-error);
 }
 
+/* Labels tab specific styles */
+.labels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.label-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background-color: var(--background-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 60px;
+}
+
+.label-button:hover {
+  background-color: var(--background-modifier-hover);
+  border-color: var(--text-accent);
+  transform: translateY(-1px);
+}
+
+.label-emoji {
+  font-size: 24px;
+  margin-bottom: 4px;
+  line-height: 1;
+}
+
+.label-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.labels-summary {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: var(--background-secondary);
+  border-radius: 6px;
+  border-left: 3px solid var(--text-accent);
+}
+
+.summary-text {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted);
+}
+
+.no-data {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted);
+  background-color: var(--background-secondary);
+  border-radius: 6px;
+}
+
+.error-message {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-error);
+  background-color: var(--background-secondary);
+  border-radius: 6px;
+  border-left: 3px solid var(--text-error);
+}
+
+/* Detail view styles for labels */
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-button {
+  padding: 6px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background-color: var(--background-secondary);
+  color: var(--text-normal);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background-color: var(--background-modifier-hover);
+  border-color: var(--text-accent);
+}
+
+.label-files-container {
+  margin: 16px 0;
+}
+
+.files-header {
+  margin-bottom: 12px;
+  color: var(--text-normal);
+  font-size: 16px;
+}
+
+.files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.file-item {
+  padding: 12px;
+  background-color: var(--background-secondary);
+  border-radius: 6px;
+  border-left: 3px solid var(--text-accent);
+}
+
+.date-link-button {
+  background: none;
+  border: none;
+  color: var(--text-accent);
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 8px;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.date-link-button:hover {
+  color: var(--text-accent-hover);
+}
+
+.occurrences-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.occurrence-item {
+  background-color: var(--background-primary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--font-monospace);
+  font-size: 14px;
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+}
+
 

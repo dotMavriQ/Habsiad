@@ -25,6 +25,7 @@ export interface HabsiadSettings {
     weight: boolean;
     calories: boolean;
     alcohol: boolean;
+    labels: boolean;
   };
 }
 
@@ -47,6 +48,7 @@ export const DEFAULT_SETTINGS: HabsiadSettings = {
     weight: true,
     calories: true,
     alcohol: true,
+    labels: true,
   },
 };
 
@@ -282,6 +284,19 @@ export class HabsiadSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.showTabs.alcohol)
           .onChange(async (value) => {
             this.plugin.settings.showTabs.alcohol = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    // Labels Tab Toggle
+    new Setting(containerEl)
+      .setName("Show Labels Tab")
+      .setDesc("Enable or disable the Labels tab in the sidebar.")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.showTabs.labels)
+          .onChange(async (value) => {
+            this.plugin.settings.showTabs.labels = value;
             await this.plugin.saveSettings();
           })
       );
