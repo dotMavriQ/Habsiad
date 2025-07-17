@@ -2,49 +2,94 @@
 .habsiad-tab-container,
 .obsitica-tab-container {
   display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   border-bottom: 2px solid var(--background-modifier-border);
   background-color: var(--background-secondary);
   border-radius: 8px 8px 0 0;
-  overflow: hidden;
+  padding: 8px;
   margin-bottom: 2px;
+  justify-content: flex-start;
+  align-items: flex-start;
 }
 
 /* Individual tabs */
 .habsiad-tab,
 .obsitica-tab {
-  padding: 12px 16px;
+  flex: 0 0 calc(33.333% - 8px); /* 3 tabs per row with gap */
+  min-width: 60px;
+  max-width: 120px;
+  padding: 12px 8px;
   cursor: pointer;
   user-select: none;
   background-color: var(--background-secondary);
-  border-right: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
   transition: all 0.2s ease;
   font-size: 18px;
   color: var(--text-muted);
-  border-bottom: 3px solid transparent;
   position: relative;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
-.habsiad-tab:last-child,
-.obsitica-tab:last-child {
-  border-right: none;
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .habsiad-tab,
+  .obsitica-tab {
+    flex: 0 0 calc(33.333% - 6px);
+    min-width: 50px;
+    max-width: 100px;
+    padding: 10px 6px;
+    font-size: 16px;
+  }
+  
+  .habsiad-tab-container,
+  .obsitica-tab-container {
+    gap: 3px;
+    padding: 6px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+  .habsiad-tab,
+  .obsitica-tab {
+    flex: 0 0 calc(33.333% - 4px);
+    min-width: 40px;
+    max-width: 80px;
+    padding: 8px 4px;
+    font-size: 14px;
+  }
+  
+  .habsiad-tab-container,
+  .obsitica-tab-container {
+    gap: 2px;
+    padding: 4px;
+  }
 }
 
 .habsiad-tab:hover,
 .obsitica-tab:hover {
   background-color: var(--background-modifier-hover);
   color: var(--text-normal);
-  transform: translateY(-1px);
-  border-bottom: 3px solid var(--interactive-accent);
+  transform: translateY(-2px);
+  border-color: var(--interactive-accent);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Active tab styling */
 .habsiad-tab.active,
 .obsitica-tab.active {
-  background-color: var(--background-primary);
-  color: var(--text-accent);
-  border-bottom: 3px solid var(--interactive-accent);
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
   font-weight: 600;
-  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
 }
 
 /* Enhanced active tab indicator */
@@ -52,14 +97,14 @@
 .obsitica-tab.active::after {
   content: '';
   position: absolute;
-  bottom: -3px;
+  bottom: -2px;
   left: 50%;
   transform: translateX(-50%);
-  width: 8px;
-  height: 8px;
-  background-color: var(--interactive-accent);
+  width: 6px;
+  height: 6px;
+  background-color: var(--text-on-accent);
   border-radius: 50%;
-  box-shadow: 0 0 8px var(--interactive-accent);
+  box-shadow: 0 0 6px var(--text-on-accent);
 }
 
 /* Content area */
@@ -269,13 +314,14 @@ button,
   text-shadow: 0 0 2px var(--text-accent);
 }
 
-/* Improved hover effects */
+/* Improved hover effects for non-active tabs */
 .habsiad-tab:not(.active):hover,
 .obsitica-tab:not(.active):hover {
   background-color: var(--background-modifier-hover);
   color: var(--text-normal);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--interactive-accent);
 }
 
 /* Focus styles for accessibility */
