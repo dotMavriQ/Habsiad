@@ -263,15 +263,12 @@ export class LogsTab {
       throw new Error(`Journal folder "${journalFolderName}" not found.`);
     }
 
-    // Get all journal files with YYYY-MM-DD.md format
-    const journalFiles = journalFolder.children.filter(
-      (file) =>
-        file instanceof TFile && file.name.match(/^\d{4}-\d{2}-\d{2}\.md$/)
-    ) as TFile[];
+    // Get all journal files recursively with YYYY-MM-DD.md format
+    const journalFiles = this.getJournalFilesRecursively(journalFolder);
 
     console.log(
-      `Found ${journalFiles.length} journal files to scan:`,
-      journalFiles.map((f) => f.name)
+      `Found ${journalFiles.length} journal files to scan (including subfolders):`,
+      journalFiles.map((f: TFile) => f.path)
     );
 
     const logMap = new Map<string, LogData>();
@@ -403,5 +400,26 @@ export class LogsTab {
 
     const content = calloutLines.join("\n").trim();
     return { content, hasImage, imagePath };
+  }
+
+  private getJournalFilesRecursively(folder: TFolder): TFile[] {
+    const journalFiles: TFile[] = [];
+
+    const processFolder = (currentFolder: TFolder) => {
+      for (const child of currentFolder.children) {
+        if (child instanceof TFile) {
+          // Check if file matches journal format YYYY-MM-DD.md
+          if (child.name.match(/^\d{4}-\d{2}-\d{2}\.md$/)) {
+            journalFiles.push(child);
+          }
+        } else if (child instanceof TFolder) {
+          // Recursively process subfolders
+          processFolder(child);
+        }
+      }
+    };
+
+    processFolder(folder);
+    return journalFiles;
   }
 }
