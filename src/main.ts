@@ -77,6 +77,9 @@ class RetroTaggerModal extends Modal {
       cls: "retrotagger-instructions",
     });
     instructionsDiv.createEl("p", {
+      text: "Items already in this journal entry are pre-selected and highlighted.",
+    });
+    instructionsDiv.createEl("p", {
       text: "Click once on an item to add it to Achievements (blue).",
     });
     instructionsDiv.createEl("p", {
@@ -108,16 +111,22 @@ class RetroTaggerModal extends Modal {
       });
     }
 
-    // Create the "Summary" section to preview what will be added
+    // Load existing achievements and dailies from the current file
+    await this.loadExistingEntries(activeFile);
+
+    // Create the "Preview" section to show what will be added
     const summaryContainer = mainContainer.createDiv({
       cls: "retrotagger-summary",
     });
-    summaryContainer.createEl("h3", { text: "Summary" });
+    summaryContainer.createEl("h3", { text: "Preview" });
 
     const achievementsDiv = summaryContainer.createDiv({
       cls: "retrotagger-achievements",
     });
-    achievementsDiv.createEl("h4", { text: "Achievements to add:" });
+    achievementsDiv.createEl("h4", {
+      text: `Achievements on ${this.journalDate}`,
+      cls: "retrotagger-preview-header",
+    });
     const achievementsList = achievementsDiv.createEl("ul", {
       cls: "retrotagger-achievements-list",
     });
@@ -125,14 +134,20 @@ class RetroTaggerModal extends Modal {
     const dailiesDiv = summaryContainer.createDiv({
       cls: "retrotagger-dailies",
     });
-    dailiesDiv.createEl("h4", { text: "Dailies to add:" });
+    dailiesDiv.createEl("h4", {
+      text: "Completed Dailies",
+      cls: "retrotagger-preview-header",
+    });
     const dailiesList = dailiesDiv.createEl("ul", {
       cls: "retrotagger-dailies-list",
     });
 
-    // Add the "Render" button
+    // Update summary to show loaded existing entries
+    this.updateSummary();
+
+    // Add the "RetroTag" button
     const renderButton = mainContainer.createEl("button", {
-      text: "Render",
+      text: "RetroTag",
       cls: "retrotagger-render-button",
     });
 
@@ -187,6 +202,73 @@ class RetroTaggerModal extends Modal {
     } catch (error) {
       console.error("Error loading glossary:", error);
       return [];
+    }
+  }
+
+  // Load existing achievements and dailies from the current file
+  private async loadExistingEntries(file: TFile) {
+    try {
+      const content = await this.app.vault.read(file);
+
+      // Parse existing achievements
+      const achievementsRegex = new RegExp(
+        `## Achievements on ${this.journalDate}([\\s\\S]*?)(?=\\n##|$)`
+      );
+      const achievementsMatch = content.match(achievementsRegex);
+
+      if (achievementsMatch) {
+        const achievementsSection = achievementsMatch[1];
+        // Look for lines like "* Habit clicked: HABIT_NAME - Positive: 1, Negative: 0"
+        const habitLines = achievementsSection.match(
+          /\* Habit clicked: ([^-]+)/g
+        );
+
+        if (habitLines) {
+          for (const line of habitLines) {
+            const habitMatch = line.match(/\* Habit clicked: ([^-]+)/);
+            if (habitMatch) {
+              const habitName = habitMatch[1].trim();
+              if (this.itemButtons[habitName]) {
+                this.selectedItems[habitName] = "achievement";
+                this.itemButtons[habitName].addClass(
+                  "retrotagger-item-achievement"
+                );
+              }
+            }
+          }
+        }
+      }
+
+      // Parse existing completed dailies
+      const dailiesRegex = /## Completed Dailies([\s\S]*?)(?=\n##|$)/;
+      const dailiesMatch = content.match(dailiesRegex);
+
+      if (dailiesMatch) {
+        const dailiesSection = dailiesMatch[1];
+        // Look for lines like "* DAILY_NAME"
+        const dailyLines = dailiesSection.match(/^\* (.+)$/gm);
+
+        if (dailyLines) {
+          for (const line of dailyLines) {
+            const dailyMatch = line.match(/^\* (.+)$/);
+            if (dailyMatch) {
+              const dailyName = dailyMatch[1].trim();
+              // Skip habit lines that might be in the dailies section
+              if (
+                !dailyName.startsWith("Habit clicked:") &&
+                this.itemButtons[dailyName]
+              ) {
+                this.selectedItems[dailyName] = "daily";
+                this.itemButtons[dailyName].addClass("retrotagger-item-daily");
+              }
+            }
+          }
+        }
+      }
+
+      // Note: updateSummary() will be called after the summary container is created
+    } catch (error) {
+      console.error("Error loading existing entries:", error);
     }
   }
 
@@ -246,15 +328,19 @@ class RetroTaggerModal extends Modal {
 
       let content = await this.app.vault.read(activeFile);
 
-      // Group items by type
-      const achievements: string[] = [];
-      const dailies: string[] = [];
+      // Group items by type, separating new from existing
+      const newAchievements: string[] = [];
+      const newDailies: string[] = [];
+
+      // Parse existing entries to avoid duplicates
+      const existingAchievements = await this.getExistingAchievements(content);
+      const existingDailies = await this.getExistingDailies(content);
 
       for (const [key, type] of Object.entries(this.selectedItems)) {
-        if (type === "achievement") {
-          achievements.push(key);
-        } else if (type === "daily") {
-          dailies.push(key);
+        if (type === "achievement" && !existingAchievements.includes(key)) {
+          newAchievements.push(key);
+        } else if (type === "daily" && !existingDailies.includes(key)) {
+          newDailies.push(key);
         }
       }
 
@@ -271,7 +357,7 @@ class RetroTaggerModal extends Modal {
       const dailiesRegex = /## Completed Dailies/;
       const hasCompletedDailiesSection = dailiesRegex.test(content);
 
-      if (achievements.length > 0) {
+      if (newAchievements.length > 0) {
         if (hasAchievementsSection) {
           // Append to existing Achievements section
           const achievementsSectionRegex = new RegExp(
@@ -284,9 +370,9 @@ class RetroTaggerModal extends Modal {
             const newSection =
               existingSection +
               "\n" +
-              achievements
+              newAchievements
                 .map(
-                  (item) =>
+                  (item: string) =>
                     `* Habit clicked: ${item} - Positive: 1, Negative: 0`
                 )
                 .join("\n");
@@ -295,15 +381,16 @@ class RetroTaggerModal extends Modal {
         } else {
           // Create new Achievements section
           newContent += `\n## Achievements on ${this.journalDate}\n`;
-          newContent += achievements
+          newContent += newAchievements
             .map(
-              (item) => `* Habit clicked: ${item} - Positive: 1, Negative: 0`
+              (item: string) =>
+                `* Habit clicked: ${item} - Positive: 1, Negative: 0`
             )
             .join("\n");
         }
       }
 
-      if (dailies.length > 0) {
+      if (newDailies.length > 0) {
         if (hasCompletedDailiesSection) {
           // Append to existing Completed Dailies section
           const dailiesSectionRegex = /## Completed Dailies[\s\S]*?(?=\n##|$)/;
@@ -314,17 +401,19 @@ class RetroTaggerModal extends Modal {
             const newSection =
               existingSection +
               "\n" +
-              dailies.map((item) => `* ${item}`).join("\n");
+              newDailies.map((item: string) => `* ${item}`).join("\n");
             content = content.replace(existingSection, newSection);
           }
         } else {
           // Create new Completed Dailies section
-          if (!hasAchievementsSection || achievements.length === 0) {
+          if (!hasAchievementsSection || newAchievements.length === 0) {
             newContent += "\n## Completed Dailies\n";
           } else {
             newContent += "\n\n## Completed Dailies\n";
           }
-          newContent += dailies.map((item) => `* ${item}`).join("\n");
+          newContent += newDailies
+            .map((item: string) => `* ${item}`)
+            .join("\n");
         }
       }
 
@@ -340,11 +429,76 @@ class RetroTaggerModal extends Modal {
       // Save the changes
       await this.app.vault.modify(activeFile, content);
 
-      new Notice(`Successfully updated journal entry for ${this.journalDate}`);
+      const totalItems = Object.keys(this.selectedItems).length;
+      const newItemCount = newAchievements.length + newDailies.length;
+
+      if (newItemCount > 0) {
+        new Notice(
+          `Successfully updated journal entry for ${this.journalDate}. Added ${newItemCount} new items (${totalItems} total selected).`
+        );
+      } else {
+        new Notice(
+          `Journal entry for ${this.journalDate} already contains all selected items.`
+        );
+      }
     } catch (error) {
       console.error("Error rendering selected items:", error);
       new Notice("Error updating journal entry. See console for details.");
     }
+  }
+
+  // Get existing achievements from content
+  private async getExistingAchievements(content: string): Promise<string[]> {
+    const achievements: string[] = [];
+    const achievementsRegex = new RegExp(
+      `## Achievements on ${this.journalDate}([\\s\\S]*?)(?=\\n##|$)`
+    );
+    const achievementsMatch = content.match(achievementsRegex);
+
+    if (achievementsMatch) {
+      const achievementsSection = achievementsMatch[1];
+      const habitLines = achievementsSection.match(
+        /\* Habit clicked: ([^-]+)/g
+      );
+
+      if (habitLines) {
+        for (const line of habitLines) {
+          const habitMatch = line.match(/\* Habit clicked: ([^-]+)/);
+          if (habitMatch) {
+            achievements.push(habitMatch[1].trim());
+          }
+        }
+      }
+    }
+
+    return achievements;
+  }
+
+  // Get existing dailies from content
+  private async getExistingDailies(content: string): Promise<string[]> {
+    const dailies: string[] = [];
+    const dailiesRegex = /## Completed Dailies([\s\S]*?)(?=\n##|$)/;
+    const dailiesMatch = content.match(dailiesRegex);
+
+    if (dailiesMatch) {
+      const dailiesSection = dailiesMatch[1];
+      const dailyLines = dailiesSection.match(/^\* (.+)$/gm);
+
+      if (dailyLines) {
+        for (const line of dailyLines) {
+          const dailyMatch = line.match(/^\* (.+)$/);
+          if (dailyMatch) {
+            const dailyName = dailyMatch[1].trim();
+            // Skip habit lines that might be in the dailies section
+            if (!dailyName.startsWith("Habit clicked:")) {
+              dailies.push(dailyName);
+            }
+          }
+        }
+      }
+    }
+
+    return dailies;
   }
 
   // Add CSS styles for the RetroTagger UI
@@ -393,6 +547,12 @@ class RetroTaggerModal extends Modal {
         padding: 8px;
         background-color: var(--background-secondary);
         border-radius: 4px;
+      }
+      
+      .retrotagger-preview-header {
+        color: #fabd2f;
+        margin-top: 12px;
+        margin-bottom: 8px;
       }
       
       .retrotagger-render-button,
