@@ -200,8 +200,8 @@ export class LabelsTab {
     const labelMap = new Map<string, LabelData>();
 
     // Pattern to match labels: `emoji: value`
-    // First, find all potential matches with backticks and colons
-    const potentialLabelPattern = /`([^`]+?):\s*([^`]*)`/g;
+    // Much more precise - emoji must be followed immediately by colon and space, then a short value
+    const potentialLabelPattern = /`([^\s`]+):\s+([^`]{1,50})`/g;
 
     for (const file of journalFiles) {
       try {
@@ -242,8 +242,20 @@ export class LabelsTab {
             const value = match[2].trim();
             const fullMatch = match[0];
 
-            // Only process if it contains actual emoji characters
-            // This regex checks for common emoji patterns
+            // Strict validation for proper labels
+            // 1. Emoji part must be a single emoji (no spaces, no long text)
+            // 2. Emoji part must contain actual emoji characters
+            // 3. Value part should be short (likely a number or brief text)
+
+            // Check if emoji part is a single token (no spaces or long text)
+            if (emoji.includes(" ") || emoji.length > 10) {
+              console.log(
+                `Skipping multi-word or long emoji part: ${fullMatch} in ${file.name}`
+              );
+              continue;
+            }
+
+            // Check if it contains actual emoji characters
             const isEmoji =
               /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F018}-\u{1F270}]|[\u{238C}\u{2B06}\u{2B07}\u{2B1B}\u{2B1C}\u{2B50}\u{2B55}\u{3030}\u{303D}\u{3297}\u{3299}]/u.test(
                 emoji
@@ -256,9 +268,35 @@ export class LabelsTab {
               continue;
             }
 
-            console.log(
-              `Found valid emoji label: ${fullMatch} in ${file.name}`
-            );
+            // Check if value looks like a label value (short, not a sentence)
+            if (value.length > 50 || value.split(" ").length > 8) {
+              console.log(
+                `Skipping long value that doesn't look like a label: ${fullMatch} in ${file.name}`
+              );
+              continue;
+            }
+
+            // Additional check: if value contains certain words that indicate it's not a label
+            const nonLabelWords = [
+              "was",
+              "were",
+              "had",
+              "have",
+              "did",
+              "would",
+              "could",
+              "should",
+              "playing",
+              "watching",
+            ];
+            if (
+              nonLabelWords.some((word) => value.toLowerCase().includes(word))
+            ) {
+              console.log(
+                `Skipping narrative text that's not a label: ${fullMatch} in ${file.name}`
+              );
+              continue;
+            }
 
             console.log(
               `Found valid emoji label: ${fullMatch} in ${file.name}`
