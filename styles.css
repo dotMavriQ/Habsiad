@@ -1,3 +1,70 @@
+/* Home tab logo and buttons styling */
+.habsiad-logo-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.habsiad-logo {
+  width: 120px;
+  height: 120px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.habsiad-version {
+  text-align: center;
+  margin: 10px 0;
+  font-weight: 500;
+  color: var(--text-accent);
+}
+
+.habsiad-buttons-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.habsiad-action-button {
+  width: 100%;
+  padding: 12px 20px;
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.habsiad-action-button:hover {
+  background-color: var(--interactive-accent-hover);
+  transform: translateY(-1px);
+}
+
+.habsiad-action-button:active {
+  transform: translateY(0);
+}
+
+/* Responsive design for smaller viewports */
+@media (max-width: 300px) {
+  .habsiad-logo {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .habsiad-action-button {
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+}
+
 /* Tab container */
 .habsiad-tab-container,
 .obsitica-tab-container {
