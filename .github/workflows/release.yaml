@@ -27,11 +27,14 @@ jobs:
         run: npm run build
 
       - name: Package Release Artifact
-        run: zip plugin-release.zip main.js manifest.json styles.css
+        run: |
+          mkdir habsiad
+          cp main.js manifest.json styles.css habsiad/
+          zip -r habsiad.zip habsiad/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            plugin-release.zip
+            habsiad.zip
