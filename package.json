@@ -6,8 +6,8 @@
   "authorUrl": "https://github.com/dotMavriQ",
   "main": "src/main.ts",
   "scripts": {
-    "dev": "webpack --watch",
-    "build": "webpack",
+    "dev": "npx webpack --watch",
+    "build": "npx webpack",
     "deploy": "bash ./deploy.sh"
   },
   "devDependencies": {
