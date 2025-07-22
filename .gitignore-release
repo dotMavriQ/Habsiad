@@ -1,0 +1,23 @@
+# Habsiad Release Branch .gitignore
+# Only include essential plugin files
+
+# Development files (exclude from release)
+src/
+node_modules/
+.github/
+webpack.config.js
+tsconfig.json
+package*.json
+deploy.sh
+habsiad-manager.sh
+*.md
+!README.md
+
+# Build artifacts to keep
+!main.js
+!main.js.map
+!manifest.json
+!styles.css
+
+# Keep essential root files
+!LICENSE
