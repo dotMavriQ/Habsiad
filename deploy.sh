@@ -88,8 +88,16 @@ print_info "Preparing clean release branch..."
 # Remove all files except .git
 find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} + 2>/dev/null || true
 
-# Copy only the essential plugin files from main
-git checkout main -- main.js main.js.map manifest.json styles.css
+# Copy only the essential plugin files from main branch
+print_info "Copying essential plugin files..."
+git show main:main.js > main.js
+git show main:manifest.json > manifest.json  
+git show main:styles.css > styles.css
+
+# Copy main.js.map if it exists
+if git cat-file -e main:main.js.map 2>/dev/null; then
+    git show main:main.js.map > main.js.map
+fi
 
 # Create a minimal README for the release branch
 cat > README.md << EOF
