@@ -114,8 +114,10 @@ if git show-ref --verify --quiet refs/heads/release; then
 else
     print_info "Creating new release branch..."
     git checkout --orphan release
-    # Remove all files from index
+    # Remove all files from index and working directory
     git rm -rf . 2>/dev/null || true
+    # Ensure working directory is clean by removing everything except .git
+    find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
 fi
 
 # Step 6: Copy files from temp directory
