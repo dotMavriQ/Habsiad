@@ -15,7 +15,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
-          ref: release  # Use the release branch for building releases
+          ref: release # Use the release branch for building releases
 
       - name: Package Release Artifact
         run: |
