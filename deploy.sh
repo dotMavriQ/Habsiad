@@ -73,22 +73,28 @@ fi
 # Step 5: Create or update release branch
 print_step "Creating/updating release branch..."
 
+# Stash any uncommitted changes first
+git stash push -m "Temporary stash for deployment" || true
+
 # Check if release branch exists
 if git show-ref --verify --quiet refs/heads/release; then
     print_info "Release branch exists, switching to it..."
     git checkout release
+    # Reset release branch to be clean
+    git reset --hard HEAD~100 2>/dev/null || git reset --hard $(git rev-list --max-parents=0 HEAD)
 else
     print_info "Creating new release branch..."
-    git checkout -b release
+    # Create orphan branch (no history)
+    git checkout --orphan release
 fi
 
 # Step 6: Clean release branch and add only necessary files
 print_info "Preparing clean release branch..."
 
-# Remove all files except .git
-find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} + 2>/dev/null || true
+# Remove all files from index
+git rm -rf . 2>/dev/null || true
 
-# Copy only the essential plugin files from main branch
+# Copy only the essential plugin files from main branch using git show
 print_info "Copying essential plugin files..."
 git show main:main.js > main.js
 git show main:manifest.json > manifest.json  
@@ -97,6 +103,11 @@ git show main:styles.css > styles.css
 # Copy main.js.map if it exists
 if git cat-file -e main:main.js.map 2>/dev/null; then
     git show main:main.js.map > main.js.map
+fi
+
+# Copy LICENSE if it exists
+if git cat-file -e main:LICENSE 2>/dev/null; then
+    git show main:LICENSE > LICENSE
 fi
 
 # Create a minimal README for the release branch
@@ -177,6 +188,9 @@ fi
 # Step 11: Return to main branch
 print_step "Returning to main branch..."
 git checkout main
+
+# Restore any stashed changes
+git stash pop 2>/dev/null || true
 
 # Step 12: Summary
 print_success "Deployment completed successfully!"
