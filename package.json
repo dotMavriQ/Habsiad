@@ -6,15 +6,15 @@
   "authorUrl": "https://github.com/dotMavriQ",
   "main": "src/main.ts",
   "scripts": {
-    "dev": "npx webpack --watch",
-    "build": "npx webpack",
+    "dev": "./node_modules/.bin/webpack --watch",
+    "build": "./node_modules/.bin/webpack",
     "deploy": "bash ./deploy.sh"
   },
   "devDependencies": {
     "obsidian": "latest",
-    "typescript": "^4.5.4",
     "ts-loader": "^9.2.6",
+    "typescript": "^4.5.4",
     "webpack": "^5.64.4",
-    "webpack-cli": "^4.9.1"
+    "webpack-cli": "^4.10.0"
   }
 }
