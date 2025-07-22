@@ -28,4 +28,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
+            main.js
+            manifest.json
+            styles.css
             habsiad.zip
