@@ -24,10 +24,10 @@
 ## 🔧 Refactoring Strategy
 
 ### Phase 1: Code Analysis & API Research
-- [ ] Research current Habitica API requirements
-- [ ] Identify breaking changes in API
-- [ ] Analyze current API usage patterns
-- [ ] Document required updates
+- [x] Research current Habitica API requirements
+- [x] Identify breaking changes in API (X-Client header required)
+- [x] Analyze current API usage patterns
+- [x] Document required updates
 
 ### Phase 2: Type System Enhancement
 - [ ] Expand habitica/types.ts with comprehensive interfaces
@@ -36,11 +36,11 @@
 - [ ] Add validation schemas
 
 ### Phase 3: Habitica Service Refactor
-- [ ] Update authentication methods
-- [ ] Add missing API endpoints
-- [ ] Implement proper error handling
-- [ ] Add rate limiting and retry logic
-- [ ] Update request/response handling
+- [x] Update authentication methods (added X-Client header)
+- [x] Add missing API endpoints (added getTodos method)
+- [x] Implement proper error handling (rate limiting, 429 responses)
+- [x] Add rate limiting and retry logic (30-second interval)
+- [x] Update request/response handling
 
 ### Phase 4: Main Plugin Modularization
 - [ ] Extract RetroTagger into separate module

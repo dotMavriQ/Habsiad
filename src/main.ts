@@ -1255,38 +1255,15 @@ export default class HabsiadPlugin extends Plugin {
     // Define the stock default block for comparison
     const defaultBlock = "### TODO:\n- [ ] Task 1\n- [ ] Task 2\n- [ ] Task 3";
 
-    // Fetch Habitica TODO tasks using stored credentials
-    const userId = this.settings.habiticaUserId;
-    const apiToken = this.settings.habiticaApiToken;
-    if (!userId || !apiToken) {
-      new Notice("Habitica credentials are missing in settings.");
-      return;
-    }
-    const apiUrl = "https://habitica.com/api/v3/tasks/user?type=todos";
-    let response;
+    // Fetch Habitica TODO tasks using the service
+    let todos;
     try {
-      response = await fetch(apiUrl, {
-        headers: {
-          "x-api-user": userId,
-          "x-api-key": apiToken,
-        },
-      });
-    } catch (err) {
+      todos = await this.habiticaService.getTodos();
+    } catch (error) {
       new Notice("Error fetching Habitica tasks.");
-      console.error(err);
+      console.error(error);
       return;
     }
-    if (!response.ok) {
-      new Notice("Failed to fetch tasks from Habitica.");
-      return;
-    }
-    const data = await response.json();
-    if (data.success !== true) {
-      new Notice("Habitica API response unsuccessful.");
-      return;
-    }
-    // Filter for incomplete TODO tasks
-    const todos = data.data.filter((todo: any) => !todo.completed);
 
     // Build a Habitica tasks block string.
     let habiticaBlock = "";
