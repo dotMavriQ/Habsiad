@@ -34,6 +34,8 @@
 - [ ] Add proper error type definitions
 - [ ] Create API response type definitions
 - [ ] Add validation schemas
+- [ ] **NEW: Import proper Obsidian types** (App, Plugin, TFile, etc.)
+- [ ] **NEW: Replace 'any' types with specific Obsidian interfaces**
 
 ### Phase 3: Habitica Service Refactor
 - [x] Update authentication methods (added X-Client header)
@@ -47,8 +49,18 @@
 - [ ] Split command handlers into separate files
 - [ ] Create dedicated modal management
 - [ ] Organize utility functions
+- [ ] **NEW: Replace direct DOM manipulation with Obsidian createEl methods**
+- [ ] **NEW: Ensure proper Component lifecycle management**
+- [ ] **NEW: Add comprehensive error handling with user-friendly Notice messages**
 
-### Phase 5: Testing & Validation
+### Phase 5: Obsidian Compliance
+- [ ] **Audit and fix direct DOM access** (document.createElement → createEl)
+- [ ] **Implement proper event registration** (registerDomEvent, registerInterval)
+- [ ] **Add TypeScript strict mode compliance**
+- [ ] **Performance optimization** (app.vault.cachedRead usage)
+- [ ] **Resource cleanup verification** (Component lifecycle)
+
+### Phase 6: Testing & Validation
 - [ ] Test API connectivity with new patterns
 - [ ] Validate backward compatibility
 - [ ] Performance testing
