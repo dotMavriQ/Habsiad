@@ -219,7 +219,7 @@ export class LogsTab {
           // Add error handling for broken images
           img.addEventListener("error", () => {
             console.log(`Failed to load image: ${resolvedImagePath}`);
-            imageContainer.style.display = "none";
+            imageContainer.addClass("habsiad-hidden");
           });
 
           // Add success handling

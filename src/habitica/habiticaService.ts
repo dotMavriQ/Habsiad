@@ -1,5 +1,13 @@
 import { requestUrl, RequestUrlParam } from "obsidian";
 import HabsiadPlugin from "../main";
+import {
+  HabiticaUserData,
+  HabiticaTask,
+  HabiticaTodo,
+  HabiticaApiResponse,
+  HabiticaRateLimitHeaders,
+} from "./types/index";
+import { HabsiadApiError } from "./types/obsidian";
 
 export class HabiticaService {
   private plugin: HabsiadPlugin;
@@ -36,7 +44,7 @@ export class HabiticaService {
     };
   }
 
-  async getUserData(): Promise<any> {
+  async getUserData(): Promise<HabiticaUserData> {
     const { habiticaUserId, habiticaApiToken } = this.plugin.settings;
 
     if (!habiticaUserId || !habiticaApiToken) {
@@ -69,8 +77,10 @@ export class HabiticaService {
       if (error.status === 429) {
         const retryAfter = error.headers?.["retry-after"];
         console.error(`Rate limited. Retry after: ${retryAfter} seconds`);
-        throw new Error(
-          `Habitica API rate limit exceeded. Please wait ${retryAfter} seconds.`
+        throw new HabsiadApiError(
+          `Habitica API rate limit exceeded. Please wait ${retryAfter} seconds.`,
+          error.status,
+          "RATE_LIMIT"
         );
       }
 
@@ -78,7 +88,7 @@ export class HabiticaService {
     }
   }
 
-  async getTasks(): Promise<any[]> {
+  async getTasks(): Promise<HabiticaTask[]> {
     const { habiticaUserId, habiticaApiToken } = this.plugin.settings;
 
     if (!habiticaUserId || !habiticaApiToken) {
@@ -111,8 +121,10 @@ export class HabiticaService {
       if (error.status === 429) {
         const retryAfter = error.headers?.["retry-after"];
         console.error(`Rate limited. Retry after: ${retryAfter} seconds`);
-        throw new Error(
-          `Habitica API rate limit exceeded. Please wait ${retryAfter} seconds.`
+        throw new HabsiadApiError(
+          `Habitica API rate limit exceeded. Please wait ${retryAfter} seconds.`,
+          error.status,
+          "RATE_LIMIT"
         );
       }
 
@@ -120,7 +132,7 @@ export class HabiticaService {
     }
   }
 
-  async getTodos(): Promise<any[]> {
+  async getTodos(): Promise<HabiticaTodo[]> {
     const { habiticaUserId, habiticaApiToken } = this.plugin.settings;
 
     if (!habiticaUserId || !habiticaApiToken) {
@@ -146,7 +158,9 @@ export class HabiticaService {
       });
 
       // Filter for incomplete TODO tasks
-      const todos = response.json.data.filter((todo: any) => !todo.completed);
+      const todos = response.json.data.filter(
+        (todo: HabiticaTodo) => !todo.completed
+      );
       return todos;
     } catch (error: any) {
       console.error("Habitica API Error:", error);
@@ -155,8 +169,10 @@ export class HabiticaService {
       if (error.status === 429) {
         const retryAfter = error.headers?.["retry-after"];
         console.error(`Rate limited. Retry after: ${retryAfter} seconds`);
-        throw new Error(
-          `Habitica API rate limit exceeded. Please wait ${retryAfter} seconds.`
+        throw new HabsiadApiError(
+          `Habitica API rate limit exceeded. Please wait ${retryAfter} seconds.`,
+          error.status,
+          "RATE_LIMIT"
         );
       }
 

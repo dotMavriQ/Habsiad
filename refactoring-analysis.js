@@ -2,13 +2,13 @@
 
 /**
  * Habsiad Refactoring Analysis Tool
- * 
+ *
  * Analyzes the current codebase structure, complexity, and generates
  * detailed recommendations for the refactoring process.
  */
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 class RefactoringAnalyzer {
   constructor() {
@@ -18,16 +18,16 @@ class RefactoringAnalyzer {
       recommendations: [],
       modularization: {},
       typeSystemAnalysis: {},
-      apiUsagePatterns: []
+      apiUsagePatterns: [],
     };
-    this.srcPath = path.join(__dirname, 'src');
+    this.srcPath = path.join(__dirname, "src");
   }
 
   // Analyze file complexity and structure
   analyzeFile(filePath, content) {
-    const lines = content.split('\n');
-    const nonEmptyLines = lines.filter(line => line.trim().length > 0);
-    
+    const lines = content.split("\n");
+    const nonEmptyLines = lines.filter((line) => line.trim().length > 0);
+
     return {
       totalLines: lines.length,
       codeLines: nonEmptyLines.length,
@@ -40,12 +40,13 @@ class RefactoringAnalyzer {
       todoComments: this.findTodoComments(content),
       apiCalls: this.findApiCalls(content),
       modalUsage: this.findModalUsage(content),
-      eventHandlers: this.findEventHandlers(content)
+      eventHandlers: this.findEventHandlers(content),
     };
   }
 
   countFunctions(content) {
-    const functionRegex = /(async\s+)?function\s+\w+|\w+\s*\([^)]*\)\s*[:{]|(async\s+)?\w+\s*=\s*(async\s*)?\([^)]*\)\s*=>/g;
+    const functionRegex =
+      /(async\s+)?function\s+\w+|\w+\s*\([^)]*\)\s*[:{]|(async\s+)?\w+\s*=\s*(async\s*)?\([^)]*\)\s*=>/g;
     return (content.match(functionRegex) || []).length;
   }
 
@@ -60,13 +61,15 @@ class RefactoringAnalyzer {
   }
 
   countExports(content) {
-    const exportRegex = /export\s+(default\s+)?(class|function|const|let|var|interface|type)/g;
+    const exportRegex =
+      /export\s+(default\s+)?(class|function|const|let|var|interface|type)/g;
     return (content.match(exportRegex) || []).length;
   }
 
   calculateComplexity(content) {
     // Simplified cyclomatic complexity
-    const complexityKeywords = /\b(if|else|while|for|switch|case|catch|&&|\|\||\?)\b/g;
+    const complexityKeywords =
+      /\b(if|else|while|for|switch|case|catch|&&|\|\||\?)\b/g;
     const matches = content.match(complexityKeywords) || [];
     return matches.length + 1; // Base complexity is 1
   }
@@ -83,7 +86,7 @@ class RefactoringAnalyzer {
 
   findTodoComments(content) {
     const todoRegex = /\/\/.*(?:TODO|FIXME|HACK|NOTE).*$/gm;
-    return (content.match(todoRegex) || []).map(comment => comment.trim());
+    return (content.match(todoRegex) || []).map((comment) => comment.trim());
   }
 
   findApiCalls(content) {
@@ -103,7 +106,7 @@ class RefactoringAnalyzer {
 
   // Analyze modularization opportunities
   analyzeModularization() {
-    const mainFile = this.results.files['src/main.ts'];
+    const mainFile = this.results.files["src/main.ts"];
     if (!mainFile) return;
 
     const recommendations = [];
@@ -111,30 +114,30 @@ class RefactoringAnalyzer {
     // Check for large files
     if (mainFile.totalLines > 500) {
       recommendations.push({
-        type: 'file_size',
-        severity: 'high',
+        type: "file_size",
+        severity: "high",
         description: `main.ts is ${mainFile.totalLines} lines - should be split into modules`,
-        suggestion: 'Extract classes and large functions into separate files'
+        suggestion: "Extract classes and large functions into separate files",
       });
     }
 
     // Check for multiple responsibilities
     if (mainFile.classes > 1) {
       recommendations.push({
-        type: 'single_responsibility',
-        severity: 'medium',
+        type: "single_responsibility",
+        severity: "medium",
         description: `main.ts contains ${mainFile.classes} classes`,
-        suggestion: 'Extract secondary classes into separate modules'
+        suggestion: "Extract secondary classes into separate modules",
       });
     }
 
     // Check for high complexity
     if (mainFile.complexity > 50) {
       recommendations.push({
-        type: 'complexity',
-        severity: 'high',
+        type: "complexity",
+        severity: "high",
         description: `High cyclomatic complexity: ${mainFile.complexity}`,
-        suggestion: 'Break down complex functions and reduce nesting'
+        suggestion: "Break down complex functions and reduce nesting",
       });
     }
 
@@ -143,39 +146,40 @@ class RefactoringAnalyzer {
 
   // Analyze type system usage
   analyzeTypeSystem() {
-    const typeFiles = Object.keys(this.results.files).filter(file => 
-      file.includes('types') || file.endsWith('.d.ts')
+    const typeFiles = Object.keys(this.results.files).filter(
+      (file) => file.includes("types") || file.endsWith(".d.ts")
     );
 
     const analysis = {
       typeFiles: typeFiles.length,
       totalTypes: 0,
       missingTypes: [],
-      recommendations: []
+      recommendations: [],
     };
 
     // Count any usage in type files
-    typeFiles.forEach(file => {
-      const content = fs.readFileSync(file, 'utf8');
+    typeFiles.forEach((file) => {
+      const content = fs.readFileSync(file, "utf8");
       const interfaceCount = (content.match(/interface\s+\w+/g) || []).length;
       const typeCount = (content.match(/type\s+\w+/g) || []).length;
       analysis.totalTypes += interfaceCount + typeCount;
     });
 
     // Check for 'any' usage indicating missing types
-    Object.keys(this.results.files).forEach(file => {
+    Object.keys(this.results.files).forEach((file) => {
       const fileData = this.results.files[file];
-      if (fileData.content && fileData.content.includes(': any')) {
+      if (fileData.content && fileData.content.includes(": any")) {
         analysis.missingTypes.push(file);
       }
     });
 
     if (analysis.totalTypes < 5) {
       analysis.recommendations.push({
-        type: 'type_coverage',
-        severity: 'medium',
-        description: 'Limited type definitions found',
-        suggestion: 'Create comprehensive type definitions for API responses and data structures'
+        type: "type_coverage",
+        severity: "medium",
+        description: "Limited type definitions found",
+        suggestion:
+          "Create comprehensive type definitions for API responses and data structures",
       });
     }
 
@@ -191,9 +195,12 @@ class RefactoringAnalyzer {
         patterns.push({
           file,
           apiCalls: data.apiCalls,
-          dependencies: data.dependencies.filter(dep => 
-            dep.includes('http') || dep.includes('fetch') || dep.includes('axios')
-          )
+          dependencies: data.dependencies.filter(
+            (dep) =>
+              dep.includes("http") ||
+              dep.includes("fetch") ||
+              dep.includes("axios")
+          ),
         });
       }
     });
@@ -208,41 +215,38 @@ class RefactoringAnalyzer {
         name: "Extract Types",
         files: [
           "src/habitica/types/user.ts",
-          "src/habitica/types/tasks.ts", 
-          "src/habitica/types/responses.ts"
+          "src/habitica/types/tasks.ts",
+          "src/habitica/types/responses.ts",
         ],
         effort: "Low",
-        description: "Create comprehensive type definitions"
+        description: "Create comprehensive type definitions",
       },
       phase2: {
         name: "Extract Modals",
-        files: [
-          "src/modals/retroTagger.ts",
-          "src/modals/baseModal.ts"
-        ],
+        files: ["src/modals/retroTagger.ts", "src/modals/baseModal.ts"],
         effort: "Medium",
-        description: "Move modal classes out of main.ts"
+        description: "Move modal classes out of main.ts",
       },
       phase3: {
         name: "Extract Commands",
         files: [
           "src/commands/habitSync.ts",
           "src/commands/todoSync.ts",
-          "src/commands/weekdayReplace.ts"
+          "src/commands/weekdayReplace.ts",
         ],
         effort: "Medium",
-        description: "Split command handlers into separate modules"
+        description: "Split command handlers into separate modules",
       },
       phase4: {
         name: "Extract Utilities",
         files: [
           "src/utils/dateUtils.ts",
           "src/utils/errorHandler.ts",
-          "src/utils/validation.ts"
+          "src/utils/validation.ts",
         ],
         effort: "Low",
-        description: "Move utility functions to dedicated modules"
-      }
+        description: "Move utility functions to dedicated modules",
+      },
     };
 
     return plan;
@@ -250,7 +254,7 @@ class RefactoringAnalyzer {
 
   // Main analysis runner
   async analyze() {
-    console.log('🔍 Starting Habsiad Refactoring Analysis...\n');
+    console.log("🔍 Starting Habsiad Refactoring Analysis...\n");
 
     // Walk through source files
     this.walkDirectory(this.srcPath);
@@ -269,19 +273,19 @@ class RefactoringAnalyzer {
 
   walkDirectory(dir) {
     const files = fs.readdirSync(dir);
-    
-    files.forEach(file => {
+
+    files.forEach((file) => {
       const filePath = path.join(dir, file);
       const relativePath = path.relative(__dirname, filePath);
       const stat = fs.statSync(filePath);
 
       if (stat.isDirectory()) {
         this.walkDirectory(filePath);
-      } else if (file.endsWith('.ts') || file.endsWith('.js')) {
-        const content = fs.readFileSync(filePath, 'utf8');
+      } else if (file.endsWith(".ts") || file.endsWith(".js")) {
+        const content = fs.readFileSync(filePath, "utf8");
         this.results.files[relativePath] = {
           ...this.analyzeFile(filePath, content),
-          content: content
+          content: content,
         };
       }
     });
@@ -289,16 +293,17 @@ class RefactoringAnalyzer {
 
   calculateMetrics() {
     const files = Object.values(this.results.files);
-    
+
     this.results.metrics = {
       totalFiles: files.length,
       totalLines: files.reduce((sum, f) => sum + f.totalLines, 0),
       totalCodeLines: files.reduce((sum, f) => sum + f.codeLines, 0),
-      averageComplexity: files.reduce((sum, f) => sum + f.complexity, 0) / files.length,
+      averageComplexity:
+        files.reduce((sum, f) => sum + f.complexity, 0) / files.length,
       totalFunctions: files.reduce((sum, f) => sum + f.functions, 0),
       totalClasses: files.reduce((sum, f) => sum + f.classes, 0),
-      largestFile: Math.max(...files.map(f => f.totalLines)),
-      mostComplexFile: Math.max(...files.map(f => f.complexity))
+      largestFile: Math.max(...files.map((f) => f.totalLines)),
+      mostComplexFile: Math.max(...files.map((f) => f.complexity)),
     };
   }
 
@@ -319,7 +324,9 @@ Generated: ${new Date().toISOString()}
 
 ## 🏗️ File Analysis
 
-${Object.entries(this.results.files).map(([file, data]) => `
+${Object.entries(this.results.files)
+  .map(
+    ([file, data]) => `
 ### ${file}
 - **Lines**: ${data.totalLines} (${data.codeLines} code)
 - **Complexity**: ${data.complexity}
@@ -327,40 +334,68 @@ ${Object.entries(this.results.files).map(([file, data]) => `
 - **Classes**: ${data.classes}
 - **API Calls**: ${data.apiCalls}
 - **Dependencies**: ${data.dependencies.length}
-${data.todoComments.length > 0 ? `- **TODOs**: ${data.todoComments.length}` : ''}
-`).join('')}
+${
+  data.todoComments.length > 0 ? `- **TODOs**: ${data.todoComments.length}` : ""
+}
+`
+  )
+  .join("")}
 
 ## 🔧 Modularization Recommendations
 
-${this.results.modularization.recommendations?.map(rec => `
+${
+  this.results.modularization.recommendations
+    ?.map(
+      (rec) => `
 ### ${rec.type.toUpperCase()} - ${rec.severity.toUpperCase()}
 **Issue**: ${rec.description}
 **Solution**: ${rec.suggestion}
-`).join('') || 'No specific recommendations generated.'}
+`
+    )
+    .join("") || "No specific recommendations generated."
+}
 
 ## 📋 Type System Analysis
 - **Type Files**: ${this.results.typeSystemAnalysis.typeFiles || 0}
 - **Total Types**: ${this.results.typeSystemAnalysis.totalTypes || 0}
-- **Files with 'any'**: ${this.results.typeSystemAnalysis.missingTypes?.length || 0}
+- **Files with 'any'**: ${
+      this.results.typeSystemAnalysis.missingTypes?.length || 0
+    }
 
-${this.results.typeSystemAnalysis.recommendations?.map(rec => `
+${
+  this.results.typeSystemAnalysis.recommendations
+    ?.map(
+      (rec) => `
 **${rec.type}**: ${rec.description} - ${rec.suggestion}
-`).join('') || ''}
+`
+    )
+    .join("") || ""
+}
 
 ## 🌐 API Usage Patterns
-${this.results.apiUsagePatterns.map(pattern => `
+${
+  this.results.apiUsagePatterns
+    .map(
+      (pattern) => `
 - **${pattern.file}**: ${pattern.apiCalls} API calls
-`).join('') || 'No API usage detected.'}
+`
+    )
+    .join("") || "No API usage detected."
+}
 
 ## 📅 Suggested Modularization Plan
 
-${Object.entries(this.generateModularizationPlan()).map(([phase, plan]) => `
+${Object.entries(this.generateModularizationPlan())
+  .map(
+    ([phase, plan]) => `
 ### ${phase.toUpperCase()}: ${plan.name}
 - **Effort**: ${plan.effort}
 - **Description**: ${plan.description}
 - **Files to Create**:
-${plan.files.map(f => `  - ${f}`).join('\n')}
-`).join('')}
+${plan.files.map((f) => `  - ${f}`).join("\n")}
+`
+  )
+  .join("")}
 
 ## 🎯 Priority Actions
 
@@ -398,17 +433,27 @@ ${plan.files.map(f => `  - ${f}`).join('\n')}
 `;
 
     // Write report to file
-    fs.writeFileSync('REFACTORING_ANALYSIS.md', report);
-    
-    console.log('✅ Analysis complete! Report generated: REFACTORING_ANALYSIS.md');
-    console.log('\n📋 Quick Summary:');
+    fs.writeFileSync("REFACTORING_ANALYSIS.md", report);
+
+    console.log(
+      "✅ Analysis complete! Report generated: REFACTORING_ANALYSIS.md"
+    );
+    console.log("\n📋 Quick Summary:");
     console.log(`- ${this.results.metrics.totalFiles} files analyzed`);
-    console.log(`- ${this.results.metrics.totalLines.toLocaleString()} total lines`);
+    console.log(
+      `- ${this.results.metrics.totalLines.toLocaleString()} total lines`
+    );
     console.log(`- Largest file: ${this.results.metrics.largestFile} lines`);
-    console.log(`- Average complexity: ${this.results.metrics.averageComplexity.toFixed(2)}`);
-    
+    console.log(
+      `- Average complexity: ${this.results.metrics.averageComplexity.toFixed(
+        2
+      )}`
+    );
+
     if (this.results.modularization.recommendations?.length > 0) {
-      console.log(`- ${this.results.modularization.recommendations.length} refactoring recommendations`);
+      console.log(
+        `- ${this.results.modularization.recommendations.length} refactoring recommendations`
+      );
     }
   }
 }

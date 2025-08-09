@@ -82,12 +82,12 @@ export class SidebarView extends ItemView {
     });
 
     tabs.forEach((tab) => {
-      const tabButton = tabContainer.createSpan("habsiad-tab");
+      const tabButton = tabContainer.createSpan(
+        "habsiad-tab habsiad-clickable"
+      );
       tabButton.setText(tab.emoji);
       // Add tooltip to show the tab name on hover
       tabButton.setAttr("title", tab.label);
-      // Ensure cursor pointer is set
-      tabButton.style.cursor = "pointer";
       tabButton.onClickEvent(() => {
         this.switchTab(tab.view);
         // Remove active class from all tabs
@@ -317,7 +317,7 @@ export class SidebarView extends ItemView {
     calculateButton.setAttr("style", "margin-bottom: 15px;");
 
     calculateButton.addEventListener("click", async () => {
-      await this.plugin.calculateCalorieTotals();
+      await this.plugin.calorieCalculations.calculateCalorieTotals();
     });
 
     const files = journalFolder.children.filter(
@@ -392,42 +392,126 @@ export class SidebarView extends ItemView {
   private displayInfoTab(container: HTMLElement) {
     const infoSection = container.createDiv("habsiad-info-section");
 
-    // Logo container with inline SVG
+    // Logo container with SVG created via DOM API
     const logoContainer = infoSection.createDiv("habsiad-logo-container");
-    logoContainer.innerHTML = `
-      <svg class="habsiad-logo" width="180" height="240" viewBox="0 0 180 240" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <!-- This creates the "carved out" effect. It cuts a hole in the shape of an H. -->
-          <clipPath id="h-cutout">
-            <!-- The outer rectangle defines the visible area, and the inner H-path is subtracted from it. -->
-            <path d="M0,0 H180 V240 H0 Z M75,95 V145 H85 V125 H95 V145 H105 V95 H95 V115 H85 V95 Z" />
-          </clipPath>
-        </defs>
 
-        <!-- Background Layer & Vase silhouette -->
-        <g fill="#1c1c1c">
-          <!-- Main body of the vase -->
-          <path d="M50,230 C0,200 0,100 50,60 L50,40 C50,10 70,10 90,10 C110,10 130,10 130,40 L130,60 C180,100 180,200 130,230 Z" />
-        </g>
+    // Create SVG element using createElementNS for SVG namespace
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "habsiad-logo");
+    svg.setAttribute("width", "180");
+    svg.setAttribute("height", "240");
+    svg.setAttribute("viewBox", "0 0 180 240");
 
-        <!-- Orange-red decorative panel with the H carved out -->
-        <g clip-path="url(#h-cutout)">
-          <path fill="#D95737" d="M50,215 C20,190 20,110 50,80 L130,80 C160,110 160,190 130,215 Z" />
-        </g>
-        
-        <!-- Decorative Lines -->
-        <g fill="none" stroke="#1c1c1c" stroke-width="4">
-            <line x1="50" y1="80" x2="130" y2="80" />
-            <line x1="50" y1="215" x2="130" y2="215" />
-        </g>
+    // Create defs element
+    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    const clipPath = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "clipPath"
+    );
+    clipPath.setAttribute("id", "h-cutout");
+    const clipPathData = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "path"
+    );
+    clipPathData.setAttribute(
+      "d",
+      "M0,0 H180 V240 H0 Z M75,95 V145 H85 V125 H95 V145 H105 V95 H95 V115 H85 V95 Z"
+    );
+    clipPath.appendChild(clipPathData);
+    defs.appendChild(clipPath);
 
-        <!-- Handles -->
-        <g fill="#1c1c1c">
-           <path d="M50,110 C25,110 25,150 50,150 L50,142 C35,142 35,118 50,118 Z" />
-           <path d="M130,110 C155,110 155,150 130,150 L130,142 C145,142 145,118 130,118 Z" />
-        </g>
-      </svg>
-    `;
+    // Background Layer & Vase silhouette
+    const backgroundGroup = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "g"
+    );
+    backgroundGroup.setAttribute("fill", "#1c1c1c");
+    const vasePath = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "path"
+    );
+    vasePath.setAttribute(
+      "d",
+      "M50,230 C0,200 0,100 50,60 L50,40 C50,10 70,10 90,10 C110,10 130,10 130,40 L130,60 C180,100 180,200 130,230 Z"
+    );
+    backgroundGroup.appendChild(vasePath);
+
+    // Orange-red decorative panel with the H carved out
+    const decorativeGroup = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "g"
+    );
+    decorativeGroup.setAttribute("clip-path", "url(#h-cutout)");
+    const decorativePath = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "path"
+    );
+    decorativePath.setAttribute("fill", "#D95737");
+    decorativePath.setAttribute(
+      "d",
+      "M50,215 C20,190 20,110 50,80 L130,80 C160,110 160,190 130,215 Z"
+    );
+    decorativeGroup.appendChild(decorativePath);
+
+    // Decorative Lines
+    const linesGroup = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "g"
+    );
+    linesGroup.setAttribute("fill", "none");
+    linesGroup.setAttribute("stroke", "#1c1c1c");
+    linesGroup.setAttribute("stroke-width", "4");
+    const line1 = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "line"
+    );
+    line1.setAttribute("x1", "50");
+    line1.setAttribute("y1", "80");
+    line1.setAttribute("x2", "130");
+    line1.setAttribute("y2", "80");
+    const line2 = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "line"
+    );
+    line2.setAttribute("x1", "50");
+    line2.setAttribute("y1", "215");
+    line2.setAttribute("x2", "130");
+    line2.setAttribute("y2", "215");
+    linesGroup.appendChild(line1);
+    linesGroup.appendChild(line2);
+
+    // Handles
+    const handlesGroup = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "g"
+    );
+    handlesGroup.setAttribute("fill", "#1c1c1c");
+    const handle1 = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "path"
+    );
+    handle1.setAttribute(
+      "d",
+      "M50,110 C25,110 25,150 50,150 L50,142 C35,142 35,118 50,118 Z"
+    );
+    const handle2 = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "path"
+    );
+    handle2.setAttribute(
+      "d",
+      "M130,110 C155,110 155,150 130,150 L130,142 C145,142 145,118 130,118 Z"
+    );
+    handlesGroup.appendChild(handle1);
+    handlesGroup.appendChild(handle2);
+
+    // Assemble the SVG
+    svg.appendChild(defs);
+    svg.appendChild(backgroundGroup);
+    svg.appendChild(decorativeGroup);
+    svg.appendChild(linesGroup);
+    svg.appendChild(handlesGroup);
+    logoContainer.appendChild(svg);
 
     // Version info
     const pluginVersion = this.plugin.manifest.version;
@@ -480,7 +564,18 @@ export class SidebarView extends ItemView {
     const donationDiv = infoSection.createDiv("habsiad-donation");
     donationDiv.setAttr("style", "margin-top: 5px;");
 
-    donationDiv.innerHTML =
-      '<a href="https://liberapay.com/dotMavriQ/donate" target="_blank"><img alt="Donate using Liberapay" src="https://img.shields.io/liberapay/patrons/dotMavriQ.svg?logo=liberapay"></a>';
+    // Create donation link using DOM API instead of innerHTML
+    const donationLink = donationDiv.createEl("a", {
+      attr: {
+        href: "https://liberapay.com/dotMavriQ/donate",
+        target: "_blank",
+      },
+    });
+    donationLink.createEl("img", {
+      attr: {
+        alt: "Donate using Liberapay",
+        src: "https://img.shields.io/liberapay/patrons/dotMavriQ.svg?logo=liberapay",
+      },
+    });
   }
 }
