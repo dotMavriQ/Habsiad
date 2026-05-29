@@ -82,8 +82,13 @@ export class HabiticaSyncCommand {
         .map((task) => `* ${task.text}`)
         .join("\n");
 
-      const today = window.moment().format("YYYY-MM-DD");
-      const output = `## Achievements on ${today}\n${habitsOutput}\n\n## Completed Dailies\n${dailiesOutput}`;
+      // Use the date of the journal file being written into, not the current
+      // system date. The filename is validated as YYYY-MM-DD.md upstream, so
+      // its basename is the correct date even when editing past midnight or
+      // backfilling an older day. (Fixes #17, #18)
+      const journalDate =
+        activeView.file?.basename ?? window.moment().format("YYYY-MM-DD");
+      const output = `## Achievements on ${journalDate}\n${habitsOutput}\n\n## Completed Dailies\n${dailiesOutput}`;
 
       const editor = activeView.editor;
       editor.replaceRange(output, editor.getCursor());
