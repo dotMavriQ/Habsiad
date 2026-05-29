@@ -2,6 +2,559 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./src/commands/calorieCalculations.ts":
+/*!*********************************************!*\
+  !*** ./src/commands/calorieCalculations.ts ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   CalorieCalculations: () => (/* binding */ CalorieCalculations)
+/* harmony export */ });
+/* harmony import */ var obsidian__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! obsidian */ "obsidian");
+/* harmony import */ var obsidian__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(obsidian__WEBPACK_IMPORTED_MODULE_0__);
+
+/**
+ * Calorie Calculations Handler
+ * Handles parsing and calculating calorie totals from journal files
+ */
+class CalorieCalculations {
+    constructor(plugin) {
+        this.plugin = plugin;
+    }
+    /**
+     * Calculates calorie totals by properly parsing the EST.CALORIES column in markdown tables
+     * and updating the calories frontmatter key with the sum.
+     */
+    async calculateCalorieTotals() {
+        const journalFolderName = this.plugin.settings.journalFolderName || "Journal";
+        const journalFolder = this.plugin.app.vault.getAbstractFileByPath(journalFolderName);
+        if (!journalFolder || !(journalFolder instanceof obsidian__WEBPACK_IMPORTED_MODULE_0__.TFolder)) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`Journal folder "${journalFolderName}" not found.`);
+            return;
+        }
+        // Get all journal files with YYYY-MM-DD.md format
+        const journalFiles = journalFolder.children
+            .filter((file) => file instanceof obsidian__WEBPACK_IMPORTED_MODULE_0__.TFile && file.name.match(/^\d{4}-\d{2}-\d{2}\.md$/))
+            .sort((a, b) => b.name.localeCompare(a.name)); // Sort by date descending
+        let filesProcessed = 0;
+        let filesUpdated = 0;
+        // Debug printing function removed for production compliance
+        for (const file of journalFiles) {
+            filesProcessed++;
+            const content = await this.plugin.app.vault.read(file);
+            // Very specific approach: Look for a markdown table that has EST.CALORIES in the header
+            // The crucial part is to properly parse the table structure with vertical bars
+            // Start by looking at the content line by line, but preserve the exact format of each line
+            const lines = content.split("\n");
+            let foundCalorieTable = false;
+            let calorieTableLines = [];
+            let tableStartLine = 0;
+            // First find a table with EST.CALORIES in the header
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                // Look for a header row that contains EST.CALORIES
+                if (line.includes("EST.CALORIES") &&
+                    line.startsWith("|") &&
+                    line.endsWith("|")) {
+                    foundCalorieTable = true;
+                    tableStartLine = i;
+                    break;
+                }
+            }
+            if (!foundCalorieTable) {
+                // No calorie table found in this file
+                continue;
+            }
+            // Now extract the complete table
+            let tableEndLine = tableStartLine;
+            for (let i = tableStartLine; i < lines.length; i++) {
+                const line = lines[i];
+                if (line.startsWith("|") && line.endsWith("|")) {
+                    calorieTableLines.push(line);
+                    tableEndLine = i;
+                }
+                else if (i > tableStartLine) {
+                    // We've reached the end of the table
+                    break;
+                }
+            }
+            // Make sure we have a header and at least one data row
+            if (calorieTableLines.length < 3) {
+                console.log(`Table too short in ${file.name}, found ${calorieTableLines.length} lines`);
+                continue;
+            }
+            const tableText = calorieTableLines.join("\n");
+            // Debug table printing removed for production compliance
+            // Parse the header to find the column index for EST.CALORIES
+            const headerLine = calorieTableLines[0];
+            const headerCells = headerLine.split("|").map((cell) => cell.trim());
+            // Find the index of the EST.CALORIES column (accounting for the empty cells at start/end)
+            let estCaloriesColumnIndex = -1;
+            for (let i = 0; i < headerCells.length; i++) {
+                if (headerCells[i].toUpperCase() === "EST.CALORIES") {
+                    estCaloriesColumnIndex = i;
+                    break;
+                }
+            }
+            if (estCaloriesColumnIndex === -1) {
+                console.log(`Could not find EST.CALORIES column in header: ${headerLine}`);
+                continue;
+            }
+            console.log(`EST.CALORIES column is at index ${estCaloriesColumnIndex} in ${file.name}`);
+            // Now process each data row (skipping header and separator)
+            let totalCalories = 0;
+            for (let i = 2; i < calorieTableLines.length; i++) {
+                const dataLine = calorieTableLines[i];
+                const dataCells = dataLine.split("|");
+                // Ensure the array has enough elements to access the EST.CALORIES column
+                if (dataCells.length <= estCaloriesColumnIndex) {
+                    console.log(`Row has insufficient columns: ${dataLine}`);
+                    continue;
+                }
+                // Get the actual cell content at the EST.CALORIES position
+                const calorieCell = dataCells[estCaloriesColumnIndex].trim();
+                // Debug logging removed for production compliance
+                // Skip empty cells or cells with just whitespace
+                if (!calorieCell || calorieCell === "") {
+                    continue;
+                }
+                // Try to extract a number from the cell
+                // This regex looks for one or more digits, ignoring any surrounding text
+                const numberMatch = calorieCell.match(/\d+/);
+                if (numberMatch) {
+                    const calories = parseInt(numberMatch[0], 10);
+                    if (!isNaN(calories) && calories > 0) {
+                        // Debug logging removed for production compliance
+                        totalCalories += calories;
+                    }
+                }
+            }
+            if (totalCalories > 0) {
+                // Debug logging removed for production compliance
+                // Update the frontmatter with the calculated total
+                await this.plugin.frontmatterCommands.updateCaloriesFrontmatter(file, totalCalories.toString());
+                filesUpdated++;
+            }
+            else {
+                console.log(`No valid calories found in ${file.name}`);
+            }
+        }
+        if (filesUpdated > 0) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`Updated calorie totals in ${filesUpdated} of ${filesProcessed} journal files.`);
+        }
+        else {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`No valid calorie data found. Checked ${filesProcessed} journal files.`);
+        }
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/commands/frontmatterUpdates.ts":
+/*!********************************************!*\
+  !*** ./src/commands/frontmatterUpdates.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   FrontmatterCommands: () => (/* binding */ FrontmatterCommands)
+/* harmony export */ });
+/**
+ * Frontmatter Update Commands
+ * Handles updating various frontmatter fields in journal entries
+ */
+class FrontmatterCommands {
+    constructor(plugin) {
+        this.plugin = plugin;
+    }
+    /**
+     * Generic frontmatter field update utility
+     * @param file - The file to update
+     * @param fieldName - The frontmatter field name (e.g., 'steps', 'weight', 'calories')
+     * @param newValue - The new value to set
+     */
+    async updateFrontmatterField(file, fieldName, newValue) {
+        let content = await this.plugin.app.vault.read(file);
+        // Locate frontmatter section
+        const frontmatterRegex = /^---\\n([\\s\\S]*?)\\n---/;
+        const match = content.match(frontmatterRegex);
+        let newContent;
+        if (match) {
+            const frontmatterText = match[1];
+            // Check if the field already exists
+            const fieldRegex = new RegExp(`^${fieldName}:`, "m");
+            const hasField = fieldRegex.test(frontmatterText);
+            if (hasField) {
+                // Modify the existing field value
+                const updatedFrontmatter = frontmatterText
+                    .split("\\n")
+                    .map((line) => line.startsWith(`${fieldName}:`)
+                    ? `${fieldName}: ${newValue}`
+                    : line)
+                    .join("\\n");
+                newContent = content.replace(frontmatterRegex, `---\\n${updatedFrontmatter}\\n---`);
+            }
+            else {
+                // Add the field to the existing frontmatter
+                const updatedFrontmatter = frontmatterText + `\\n${fieldName}: ${newValue}`;
+                newContent = content.replace(frontmatterRegex, `---\\n${updatedFrontmatter}\\n---`);
+            }
+        }
+        else {
+            // If no frontmatter exists, create it
+            newContent = `---\\n${fieldName}: ${newValue}\\n---\\n\\n${content}`;
+        }
+        // Save the updated file
+        await this.plugin.app.vault.modify(file, newContent);
+    }
+    /**
+     * Updates the "steps" field in frontmatter
+     */
+    async updateStepsFrontmatter(file, newSteps) {
+        await this.updateFrontmatterField(file, "steps", newSteps);
+    }
+    /**
+     * Updates the "weight" field in frontmatter
+     */
+    async updateWeightFrontmatter(file, newWeight) {
+        await this.updateFrontmatterField(file, "weight", newWeight);
+    }
+    /**
+     * Updates the "calories" field in frontmatter
+     */
+    async updateCaloriesFrontmatter(file, newCalories) {
+        await this.updateFrontmatterField(file, "calories", newCalories);
+    }
+    /**
+     * Save custom frontmatter name-value pair
+     */
+    async saveCustomFrontmatterName(key, value) {
+        if (!this.plugin.settings.customFrontmatter) {
+            this.plugin.settings.customFrontmatter = {};
+        }
+        this.plugin.settings.customFrontmatter[key] = value;
+        await this.plugin.settingsSync.saveSettings(this.plugin.settings);
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/commands/habiticaSync.ts":
+/*!**************************************!*\
+  !*** ./src/commands/habiticaSync.ts ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   HabiticaSyncCommand: () => (/* binding */ HabiticaSyncCommand)
+/* harmony export */ });
+/* harmony import */ var obsidian__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! obsidian */ "obsidian");
+/* harmony import */ var obsidian__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(obsidian__WEBPACK_IMPORTED_MODULE_0__);
+
+/**
+ * Habitica Synchronization Command Handler
+ * Handles generating and inserting Habitica habits and dailies into journal entries
+ */
+class HabiticaSyncCommand {
+    constructor(plugin) {
+        this.plugin = plugin;
+    }
+    /**
+     * Main command to generate and insert habits and dailies
+     * Validates the current context and delegates to insertion
+     */
+    async generateHabitsAndDailies() {
+        const activeView = this.plugin.app.workspace.getActiveViewOfType(obsidian__WEBPACK_IMPORTED_MODULE_0__.MarkdownView);
+        if (!activeView) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Please open a Markdown file to insert Habitica data.");
+            return;
+        }
+        const file = activeView.file;
+        if (!file) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("No file is open. Please open a Markdown file.");
+            return;
+        }
+        const journalFolderName = this.plugin.settings.journalFolderName || "Journal";
+        if (!file.path.toLowerCase().startsWith(`${journalFolderName.toLowerCase()}/`)) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`This command can only be used in the ${journalFolderName} folder.`);
+            return;
+        }
+        const fileNamePattern = /^\d{4}-\d{2}-\d{2}\.md$/;
+        if (!fileNamePattern.test(file.name)) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("This command can only be used in daily journal notes.");
+            return;
+        }
+        const { habiticaUserId, habiticaApiToken } = this.plugin.settings;
+        if (!habiticaUserId || !habiticaApiToken) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Please enter your Habitica credentials in the Habsiad settings.");
+            return;
+        }
+        await this.insertHabitsAndDailies(activeView);
+    }
+    /**
+     * Fetches Habitica data and inserts formatted habits and dailies into the current note
+     */
+    async insertHabitsAndDailies(activeView) {
+        var _a, _b;
+        try {
+            const tasks = await this.plugin.habiticaService.getTasks();
+            const habitsOutput = tasks
+                .filter((task) => task.type === "habit" &&
+                (task.counterUp > 0 || task.counterDown > 0))
+                .map((task) => `* Habit clicked: ${task.text} - Positive: ${task.counterUp}, Negative: ${task.counterDown}`)
+                .join("\n");
+            const dailiesOutput = tasks
+                .filter((task) => task.type === "daily" && task.completed)
+                .map((task) => `* ${task.text}`)
+                .join("\n");
+            // Use the date of the journal file being written into, not the current
+            // system date. The filename is validated as YYYY-MM-DD.md upstream, so
+            // its basename is the correct date even when editing past midnight or
+            // backfilling an older day. (Fixes #17, #18)
+            const journalDate = (_b = (_a = activeView.file) === null || _a === void 0 ? void 0 : _a.basename) !== null && _b !== void 0 ? _b : window.moment().format("YYYY-MM-DD");
+            const output = `## Achievements on ${journalDate}\n${habitsOutput}\n\n## Completed Dailies\n${dailiesOutput}`;
+            const editor = activeView.editor;
+            editor.replaceRange(output, editor.getCursor());
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Habits and Dailies inserted successfully.");
+        }
+        catch (error) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Failed to fetch Habitica tasks. Check console for details.");
+            console.error("Error fetching Habitica tasks:", error);
+        }
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/commands/utilityCommands.ts":
+/*!*****************************************!*\
+  !*** ./src/commands/utilityCommands.ts ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   UtilityCommands: () => (/* binding */ UtilityCommands)
+/* harmony export */ });
+/* harmony import */ var obsidian__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! obsidian */ "obsidian");
+/* harmony import */ var obsidian__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(obsidian__WEBPACK_IMPORTED_MODULE_0__);
+
+/**
+ * Utility Commands Handler
+ * Handles text processing utilities and specialized sync operations
+ */
+class UtilityCommands {
+    constructor(plugin) {
+        this.plugin = plugin;
+    }
+    /**
+     * Replace {WEEKDAY} placeholder with actual weekday name in journal files
+     */
+    async replaceWeekday(file) {
+        var _a;
+        // Get the active file if no specific file is passed
+        if (!file) {
+            const activeView = this.plugin.app.workspace.getActiveViewOfType(obsidian__WEBPACK_IMPORTED_MODULE_0__.MarkdownView);
+            file = (_a = activeView === null || activeView === void 0 ? void 0 : activeView.file) !== null && _a !== void 0 ? _a : undefined;
+        }
+        // Ensure a valid TFile is provided
+        if (!file) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Please open a journal entry.");
+            return;
+        }
+        // Check if the file matches the expected yyyy-mm-dd.md pattern
+        const fileName = file.name;
+        const match = fileName.match(/^(\\d{4})-(\\d{2})-(\\d{2})\\.md$/);
+        if (!match) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("This is not a valid journal file.");
+            return;
+        }
+        const [_, year, month, day] = match;
+        const date = new Date(`${year}-${month}-${day}`);
+        const weekday = date
+            .toLocaleDateString("en-US", { weekday: "long" })
+            .toUpperCase();
+        // Read the file's content
+        let content = await this.plugin.app.vault.read(file);
+        // Handle frontmatter: Find where it ends (after the second "---")
+        const frontmatterEnd = content.indexOf("---", 3); // Find the second "---"
+        const bodyStartIndex = frontmatterEnd !== -1 ? frontmatterEnd + 3 : 0; // Skip past "---\\n"
+        const bodyContent = content.slice(bodyStartIndex);
+        // Replace "# {WEEKDAY}" with the actual weekday
+        const updatedBodyContent = bodyContent.replace(/^# \\{WEEKDAY\\}/m, `# ${weekday}`);
+        // If no changes were made, notify the user and return
+        if (bodyContent === updatedBodyContent) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("No changes were made; # {WEEKDAY} not found.");
+            return;
+        }
+        // Reassemble the content (frontmatter + updated body)
+        const updatedContent = content.slice(0, bodyStartIndex) + updatedBodyContent;
+        // Save the updated content back to the file
+        await this.plugin.app.vault.modify(file, updatedContent);
+        new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`Updated {WEEKDAY} to ${weekday}`);
+    }
+    /**
+     * Syncs the TODO section of the active journal file with Habitica tasks.
+     * - It verifies the file is in YYYY-MM-DD.md format.
+     * - It locates the "### TODO:" header and determines the block boundaries.
+     */
+    async syncTodo() {
+        // Get the active file
+        const activeFile = this.plugin.app.workspace.getActiveFile();
+        if (!activeFile) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("No active file found.");
+            return;
+        }
+        // Check that the file name is in the format YYYY-MM-DD.md
+        if (!/^\\d{4}-\\d{2}-\\d{2}\\.md$/.test(activeFile.name)) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("This command only works on journal files (YYYY-MM-DD.md).");
+            return;
+        }
+        // Read the file content
+        let content = await this.plugin.app.vault.read(activeFile);
+        const lines = content.split("\\n");
+        // Locate the TODO header; we expect a line exactly "### TODO:"
+        let todoStart = -1;
+        let todoEnd = lines.length;
+        for (let i = 0; i < lines.length; i++) {
+            if (/^### TODO:\\s*$/.test(lines[i])) {
+                todoStart = i;
+                // Look for the next markdown header (line starting with '#' and a space)
+                for (let j = i + 1; j < lines.length; j++) {
+                    if (/^#{1,6}\\s/.test(lines[j])) {
+                        todoEnd = j;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+        if (todoStart === -1) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("No TODO header found in this file.");
+            return;
+        }
+        // Extract the current TODO block (including header)
+        const currentTodoBlock = lines.slice(todoStart, todoEnd).join("\\n");
+        // Define the stock default block for comparison
+        const defaultBlock = "### TODO:\\n- [ ] Task 1\\n- [ ] Task 2\\n- [ ] Task 3";
+        // Fetch Habitica TODO tasks using the service
+        let todos;
+        try {
+            todos = await this.plugin.habiticaService.getTodos();
+        }
+        catch (error) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Failed to fetch Habitica TODOs. Check console for details.");
+            console.error("Error fetching Habitica TODOs:", error);
+            return;
+        }
+        if (todos.length === 0) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("No incomplete TODOs found in Habitica.");
+            return;
+        }
+        // Build a new TODO block from Habitica TODOs
+        const newTodoBlock = ["### TODO:"]
+            .concat(todos.map((todo) => `- [ ] ${todo.text}`))
+            .join("\\n");
+        // Check if the current block is the default; if so, replace unconditionally
+        const isDefault = currentTodoBlock.trim() === defaultBlock.trim();
+        // Check if there are any differences to the current block
+        const isDifferent = currentTodoBlock.trim() !== newTodoBlock.trim();
+        if (!isDefault && !isDifferent) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("TODO section is already up to date.");
+            return;
+        }
+        // If it's not the default and it's different, ask for confirmation
+        if (!isDefault && isDifferent) {
+            const userWantsToReplace = confirm("The TODO section has custom content. Do you want to replace it with Habitica TODOs?");
+            if (!userWantsToReplace) {
+                new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("TODO sync cancelled.");
+                return;
+            }
+        }
+        // Replace the TODO block
+        const newLines = [
+            ...lines.slice(0, todoStart),
+            ...newTodoBlock.split("\\n"),
+            ...lines.slice(todoEnd),
+        ];
+        const newContent = newLines.join("\\n");
+        // Save the updated file
+        await this.plugin.app.vault.modify(activeFile, newContent);
+        new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`TODO section updated with ${todos.length} Habitica tasks.`);
+    }
+    /**
+     * Sync basic Habitica stats to frontmatter (simple version)
+     * Updates frontmatter fields with current Habitica user data
+     */
+    async syncBasicHabiticaStats() {
+        var _a, _b, _c, _d, _e;
+        const activeFile = this.plugin.app.workspace.getActiveFile();
+        if (!activeFile) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("No active file found.");
+            return;
+        }
+        try {
+            // Fetch user data from Habitica
+            const userData = await this.plugin.habiticaService.getUserData();
+            if (!(userData === null || userData === void 0 ? void 0 : userData.stats)) {
+                new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Failed to fetch Habitica user data.");
+                return;
+            }
+            // Get current content
+            let content = await this.plugin.app.vault.read(activeFile);
+            // Update frontmatter with Habitica stats
+            const frontmatterRegex = /^---\\n([\\s\\S]*?)\\n---/;
+            const match = content.match(frontmatterRegex);
+            const habiticaData = {
+                habitica_hp: ((_a = userData.stats.hp) === null || _a === void 0 ? void 0 : _a.toFixed(1)) || "0",
+                habitica_mp: ((_b = userData.stats.mp) === null || _b === void 0 ? void 0 : _b.toFixed(1)) || "0",
+                habitica_exp: ((_c = userData.stats.exp) === null || _c === void 0 ? void 0 : _c.toFixed(0)) || "0",
+                habitica_gold: ((_d = userData.stats.gp) === null || _d === void 0 ? void 0 : _d.toFixed(0)) || "0",
+                habitica_level: ((_e = userData.stats.lvl) === null || _e === void 0 ? void 0 : _e.toString()) || "1",
+            };
+            let newContent;
+            if (match) {
+                // Update existing frontmatter
+                let frontmatterText = match[1];
+                // Update each field
+                Object.entries(habiticaData).forEach(([key, value]) => {
+                    const fieldRegex = new RegExp(`^${key}:.*$`, "m");
+                    if (fieldRegex.test(frontmatterText)) {
+                        frontmatterText = frontmatterText.replace(fieldRegex, `${key}: ${value}`);
+                    }
+                    else {
+                        frontmatterText += `\\n${key}: ${value}`;
+                    }
+                });
+                newContent = content.replace(frontmatterRegex, `---\\n${frontmatterText}\\n---`);
+            }
+            else {
+                // Create new frontmatter
+                const frontmatterLines = Object.entries(habiticaData)
+                    .map(([key, value]) => `${key}: ${value}`)
+                    .join("\\n");
+                newContent = `---\\n${frontmatterLines}\\n---\\n\\n${content}`;
+            }
+            await this.plugin.app.vault.modify(activeFile, newContent);
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Habitica data synced to frontmatter successfully.");
+        }
+        catch (error) {
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Failed to sync Habitica data. Check console for details.");
+            console.error("Error syncing Habitica to frontmatter:", error);
+        }
+    }
+}
+
+
+/***/ }),
+
 /***/ "./src/habitica/habiticaService.ts":
 /*!*****************************************!*\
   !*** ./src/habitica/habiticaService.ts ***!
@@ -14,55 +567,711 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var obsidian__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! obsidian */ "obsidian");
 /* harmony import */ var obsidian__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(obsidian__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _types_obsidian__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./types/obsidian */ "./src/habitica/types/obsidian.ts");
+
 
 class HabiticaService {
     constructor(plugin) {
-        this.apiUrl = 'https://habitica.com/api/v3';
+        this.apiUrl = "https://habitica.com/api/v3";
+        this.lastRequestTime = 0;
+        this.minRequestInterval = 30000; // 30 seconds as per API guidelines
         this.plugin = plugin;
     }
+    async respectRateLimit() {
+        const now = Date.now();
+        const timeSinceLastRequest = now - this.lastRequestTime;
+        if (timeSinceLastRequest < this.minRequestInterval) {
+            const waitTime = this.minRequestInterval - timeSinceLastRequest;
+            console.log(`Habitica rate limit: waiting ${waitTime}ms before next request`);
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
+        }
+        this.lastRequestTime = Date.now();
+    }
+    getCommonHeaders() {
+        const { habiticaUserId } = this.plugin.settings;
+        return {
+            "x-api-user": habiticaUserId,
+            "x-api-key": this.plugin.settings.habiticaApiToken,
+            "x-client": `${habiticaUserId}-Habsiad`,
+        };
+    }
     async getUserData() {
+        var _a;
         const { habiticaUserId, habiticaApiToken } = this.plugin.settings;
         if (!habiticaUserId || !habiticaApiToken) {
-            throw new Error('Habitica credentials are not set.');
+            throw new Error("Habitica credentials are not set.");
         }
+        await this.respectRateLimit();
         const options = {
             url: `${this.apiUrl}/user`,
-            method: 'GET',
-            headers: {
-                'x-api-user': habiticaUserId,
-                'x-api-key': habiticaApiToken,
-            },
+            method: "GET",
+            headers: this.getCommonHeaders(),
         };
         try {
             const response = await (0,obsidian__WEBPACK_IMPORTED_MODULE_0__.requestUrl)(options);
+            // Log rate limit info for debugging
+            console.log("Habitica API Rate Limit Status:", {
+                limit: response.headers["x-ratelimit-limit"],
+                remaining: response.headers["x-ratelimit-remaining"],
+                reset: response.headers["x-ratelimit-reset"],
+            });
             return response.json.data;
         }
         catch (error) {
-            console.error('Habitica API Error:', error);
+            console.error("Habitica API Error:", error);
+            // Handle rate limiting specifically
+            if (error.status === 429) {
+                const retryAfter = (_a = error.headers) === null || _a === void 0 ? void 0 : _a["retry-after"];
+                console.error(`Rate limited. Retry after: ${retryAfter} seconds`);
+                throw new _types_obsidian__WEBPACK_IMPORTED_MODULE_1__.HabsiadApiError(`Habitica API rate limit exceeded. Please wait ${retryAfter} seconds.`, error.status, "RATE_LIMIT");
+            }
             throw error;
         }
     }
     async getTasks() {
+        var _a;
         const { habiticaUserId, habiticaApiToken } = this.plugin.settings;
         if (!habiticaUserId || !habiticaApiToken) {
-            throw new Error('Habitica credentials are not set.');
+            throw new Error("Habitica credentials are not set.");
         }
+        await this.respectRateLimit();
         const options = {
             url: `${this.apiUrl}/tasks/user`,
-            method: 'GET',
-            headers: {
-                'x-api-user': habiticaUserId,
-                'x-api-key': habiticaApiToken,
-            },
+            method: "GET",
+            headers: this.getCommonHeaders(),
         };
         try {
             const response = await (0,obsidian__WEBPACK_IMPORTED_MODULE_0__.requestUrl)(options);
+            // Log rate limit info for debugging
+            console.log("Habitica API Rate Limit Status:", {
+                limit: response.headers["x-ratelimit-limit"],
+                remaining: response.headers["x-ratelimit-remaining"],
+                reset: response.headers["x-ratelimit-reset"],
+            });
             return response.json.data;
         }
         catch (error) {
-            console.error('Habitica API Error:', error);
+            console.error("Habitica API Error:", error);
+            // Handle rate limiting specifically
+            if (error.status === 429) {
+                const retryAfter = (_a = error.headers) === null || _a === void 0 ? void 0 : _a["retry-after"];
+                console.error(`Rate limited. Retry after: ${retryAfter} seconds`);
+                throw new _types_obsidian__WEBPACK_IMPORTED_MODULE_1__.HabsiadApiError(`Habitica API rate limit exceeded. Please wait ${retryAfter} seconds.`, error.status, "RATE_LIMIT");
+            }
             throw error;
         }
+    }
+    async getTodos() {
+        var _a;
+        const { habiticaUserId, habiticaApiToken } = this.plugin.settings;
+        if (!habiticaUserId || !habiticaApiToken) {
+            throw new Error("Habitica credentials are not set.");
+        }
+        await this.respectRateLimit();
+        const options = {
+            url: `${this.apiUrl}/tasks/user?type=todos`,
+            method: "GET",
+            headers: this.getCommonHeaders(),
+        };
+        try {
+            const response = await (0,obsidian__WEBPACK_IMPORTED_MODULE_0__.requestUrl)(options);
+            // Log rate limit info for debugging
+            console.log("Habitica API Rate Limit Status:", {
+                limit: response.headers["x-ratelimit-limit"],
+                remaining: response.headers["x-ratelimit-remaining"],
+                reset: response.headers["x-ratelimit-reset"],
+            });
+            // Filter for incomplete TODO tasks
+            const todos = response.json.data.filter((todo) => !todo.completed);
+            return todos;
+        }
+        catch (error) {
+            console.error("Habitica API Error:", error);
+            // Handle rate limiting specifically
+            if (error.status === 429) {
+                const retryAfter = (_a = error.headers) === null || _a === void 0 ? void 0 : _a["retry-after"];
+                console.error(`Rate limited. Retry after: ${retryAfter} seconds`);
+                throw new _types_obsidian__WEBPACK_IMPORTED_MODULE_1__.HabsiadApiError(`Habitica API rate limit exceeded. Please wait ${retryAfter} seconds.`, error.status, "RATE_LIMIT");
+            }
+            throw error;
+        }
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/habitica/types/obsidian.ts":
+/*!****************************************!*\
+  !*** ./src/habitica/types/obsidian.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   App: () => (/* reexport safe */ obsidian__WEBPACK_IMPORTED_MODULE_0__.App),
+/* harmony export */   Component: () => (/* reexport safe */ obsidian__WEBPACK_IMPORTED_MODULE_0__.Component),
+/* harmony export */   HabsiadApiError: () => (/* binding */ HabsiadApiError),
+/* harmony export */   HabsiadPluginError: () => (/* binding */ HabsiadPluginError),
+/* harmony export */   HabsiadSyncError: () => (/* binding */ HabsiadSyncError),
+/* harmony export */   ItemView: () => (/* reexport safe */ obsidian__WEBPACK_IMPORTED_MODULE_0__.ItemView),
+/* harmony export */   Modal: () => (/* reexport safe */ obsidian__WEBPACK_IMPORTED_MODULE_0__.Modal),
+/* harmony export */   Plugin: () => (/* reexport safe */ obsidian__WEBPACK_IMPORTED_MODULE_0__.Plugin),
+/* harmony export */   PluginSettingTab: () => (/* reexport safe */ obsidian__WEBPACK_IMPORTED_MODULE_0__.PluginSettingTab),
+/* harmony export */   TFile: () => (/* reexport safe */ obsidian__WEBPACK_IMPORTED_MODULE_0__.TFile),
+/* harmony export */   isHabsiadApiError: () => (/* binding */ isHabsiadApiError),
+/* harmony export */   isHabsiadPluginError: () => (/* binding */ isHabsiadPluginError),
+/* harmony export */   isHabsiadSyncError: () => (/* binding */ isHabsiadSyncError)
+/* harmony export */ });
+/* harmony import */ var obsidian__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! obsidian */ "obsidian");
+/* harmony import */ var obsidian__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(obsidian__WEBPACK_IMPORTED_MODULE_0__);
+/**
+ * Obsidian-specific TypeScript interfaces and type extensions
+ * Ensures proper integration with Obsidian API
+ */
+
+// Re-export commonly used Obsidian types for convenience
+
+// Error types specific to our plugin
+class HabsiadPluginError extends Error {
+    constructor(message, code, category, originalError) {
+        super(message);
+        this.code = code;
+        this.category = category;
+        this.originalError = originalError;
+        this.name = "HabsiadPluginError";
+    }
+}
+class HabsiadApiError extends HabsiadPluginError {
+    constructor(message, status, apiResponse, originalError) {
+        super(message, `API_ERROR_${status}`, "api", originalError);
+        this.status = status;
+        this.apiResponse = apiResponse;
+        this.name = "HabsiadApiError";
+    }
+}
+class HabsiadSyncError extends HabsiadPluginError {
+    constructor(message, syncType, affectedFiles, originalError) {
+        super(message, `SYNC_ERROR_${syncType.toUpperCase()}`, "sync", originalError);
+        this.syncType = syncType;
+        this.affectedFiles = affectedFiles;
+        this.name = "HabsiadSyncError";
+    }
+}
+// Type guards for error checking
+function isHabsiadPluginError(error) {
+    return error instanceof HabsiadPluginError;
+}
+function isHabsiadApiError(error) {
+    return error instanceof HabsiadApiError;
+}
+function isHabsiadSyncError(error) {
+    return error instanceof HabsiadSyncError;
+}
+
+
+/***/ }),
+
+/***/ "./src/modals/retroTagger.ts":
+/*!***********************************!*\
+  !*** ./src/modals/retroTagger.ts ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   RetroTaggerModal: () => (/* binding */ RetroTaggerModal)
+/* harmony export */ });
+/* harmony import */ var obsidian__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! obsidian */ "obsidian");
+/* harmony import */ var obsidian__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(obsidian__WEBPACK_IMPORTED_MODULE_0__);
+
+/**
+ * RetroTagger Modal - Allows users to add achievements and dailies to journal entries
+ * This modal provides an interface for retroactively tagging journal entries with
+ * Habitica data for completed habits and dailies.
+ */
+class RetroTaggerModal extends obsidian__WEBPACK_IMPORTED_MODULE_0__.Modal {
+    constructor(app, plugin) {
+        super(app);
+        this.selectedItems = {}; // key -> "achievement" or "daily"
+        this.itemButtons = {};
+        this.plugin = plugin;
+        this.journalDate = "";
+    }
+    async onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+        // Get current file to check if it's a journal entry
+        const activeFile = this.app.workspace.getActiveFile();
+        if (!activeFile) {
+            contentEl.createEl("div", { text: "No file is currently open." });
+            return;
+        }
+        // Check if the file is in the journal folder and has the YYYY-MM-DD.md format
+        const journalFolderName = this.plugin.settings.journalFolderName || "Journal";
+        const filePathLower = activeFile.path.toLowerCase();
+        const journalFolderLower = journalFolderName.toLowerCase();
+        if (!filePathLower.startsWith(`${journalFolderLower}/`)) {
+            contentEl.createEl("div", {
+                text: `This file is not in the ${journalFolderName} folder.`,
+            });
+            return;
+        }
+        const match = activeFile.name.match(/^(\d{4}-\d{2}-\d{2})\.md$/);
+        if (!match) {
+            contentEl.createEl("div", {
+                text: "This file is not a valid journal entry (YYYY-MM-DD.md format required).",
+            });
+            return;
+        }
+        this.journalDate = match[1];
+        // Create the main container for the retrotagger UI
+        const mainContainer = contentEl.createDiv({ cls: "retrotagger-container" });
+        // Add header
+        mainContainer.createEl("h2", { text: `RetroTagger - ${this.journalDate}` });
+        // Add instructions
+        const instructionsDiv = mainContainer.createDiv({
+            cls: "retrotagger-instructions",
+        });
+        instructionsDiv.createEl("p", {
+            text: "Items already in this journal entry are pre-selected and highlighted.",
+        });
+        instructionsDiv.createEl("p", {
+            text: "Click once on an item to add it to Achievements (blue).",
+        });
+        instructionsDiv.createEl("p", {
+            text: "Click twice on an item to add it to Dailies (green).",
+        });
+        instructionsDiv.createEl("p", { text: "Click a third time to deselect." });
+        // Create container for Habitica items
+        const itemsContainer = mainContainer.createDiv({
+            cls: "retrotagger-items",
+        });
+        // Load the glossary to get Habitica keys
+        const habiticaKeys = await this.loadHabiticaKeys();
+        // Create buttons for each Habitica item
+        for (const habiticaKey of habiticaKeys) {
+            if (!habiticaKey)
+                continue;
+            const itemButton = itemsContainer.createEl("button", {
+                text: habiticaKey,
+                cls: "retrotagger-item",
+            });
+            this.itemButtons[habiticaKey] = itemButton;
+            itemButton.addEventListener("click", () => {
+                this.toggleItemSelection(habiticaKey);
+            });
+        }
+        // Load existing achievements and dailies from the current file
+        await this.loadExistingEntries(activeFile);
+        // Create the "Preview" section to show what will be added
+        const summaryContainer = mainContainer.createDiv({
+            cls: "retrotagger-summary",
+        });
+        summaryContainer.createEl("h3", { text: "Preview" });
+        const achievementsDiv = summaryContainer.createDiv({
+            cls: "retrotagger-achievements",
+        });
+        achievementsDiv.createEl("h4", {
+            text: `Achievements on ${this.journalDate}`,
+            cls: "retrotagger-preview-header",
+        });
+        const achievementsList = achievementsDiv.createEl("ul", {
+            cls: "retrotagger-achievements-list",
+        });
+        const dailiesDiv = summaryContainer.createDiv({
+            cls: "retrotagger-dailies",
+        });
+        dailiesDiv.createEl("h4", {
+            text: "Completed Dailies",
+            cls: "retrotagger-preview-header",
+        });
+        const dailiesList = dailiesDiv.createEl("ul", {
+            cls: "retrotagger-dailies-list",
+        });
+        // Update summary to show loaded existing entries
+        this.updateSummary();
+        // Add the "RetroTag" button
+        const renderButton = mainContainer.createEl("button", {
+            text: "RetroTag",
+            cls: "retrotagger-render-button",
+        });
+        renderButton.addEventListener("click", async () => {
+            await this.renderSelectedItems();
+            this.close();
+        });
+        // Add "Cancel" button
+        const cancelButton = mainContainer.createEl("button", {
+            text: "Cancel",
+            cls: "retrotagger-cancel-button",
+        });
+        cancelButton.addEventListener("click", () => {
+            this.close();
+        });
+        // Add CSS for the RetroTagger UI
+        this.addRetroTaggerStyles();
+    }
+    // Load Habitica keys from the glossary
+    async loadHabiticaKeys() {
+        const pluginFolder = `${this.plugin.app.vault.configDir}/plugins/Habsiad`;
+        const glossaryFileName = "frontmatterGlossary.json";
+        const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
+        try {
+            const data = await this.app.vault.adapter.read(glossaryPath);
+            const glossaryMapping = JSON.parse(data);
+            // Extract unique Habitica keys, handling both old and new format
+            let habiticaKeys = [];
+            for (const value of Object.values(glossaryMapping)) {
+                if (typeof value === "string") {
+                    // Old format: string values
+                    if (value !== "")
+                        habiticaKeys.push(value);
+                }
+                else if (typeof value === "object" && value !== null) {
+                    // New format: object with habiticaKey property
+                    const entry = value;
+                    if (entry.habiticaKey &&
+                        entry.habiticaKey !== "" &&
+                        !entry.isDisabled) {
+                        habiticaKeys.push(entry.habiticaKey);
+                    }
+                }
+            }
+            return habiticaKeys;
+        }
+        catch (error) {
+            console.error("Error loading glossary:", error);
+            return [];
+        }
+    }
+    // Load existing achievements and dailies from the current file
+    async loadExistingEntries(file) {
+        try {
+            const content = await this.app.vault.read(file);
+            // Parse existing achievements
+            const achievementsRegex = new RegExp(`## Achievements on ${this.journalDate}([\\s\\S]*?)(?=\\n##|$)`);
+            const achievementsMatch = content.match(achievementsRegex);
+            if (achievementsMatch) {
+                const achievementsSection = achievementsMatch[1];
+                // Look for lines like "* Habit clicked: HABIT_NAME - Positive: 1, Negative: 0"
+                const habitLines = achievementsSection.match(/\* Habit clicked: ([^-]+)/g);
+                if (habitLines) {
+                    for (const line of habitLines) {
+                        const habitMatch = line.match(/\* Habit clicked: ([^-]+)/);
+                        if (habitMatch) {
+                            const habitName = habitMatch[1].trim();
+                            if (this.itemButtons[habitName]) {
+                                this.selectedItems[habitName] = "achievement";
+                                this.itemButtons[habitName].addClass("retrotagger-item-achievement");
+                            }
+                        }
+                    }
+                }
+            }
+            // Parse existing completed dailies
+            const dailiesRegex = /## Completed Dailies([\s\S]*?)(?=\n##|$)/;
+            const dailiesMatch = content.match(dailiesRegex);
+            if (dailiesMatch) {
+                const dailiesSection = dailiesMatch[1];
+                // Look for lines like "* DAILY_NAME"
+                const dailyLines = dailiesSection.match(/^\* (.+)$/gm);
+                if (dailyLines) {
+                    for (const line of dailyLines) {
+                        const dailyMatch = line.match(/^\* (.+)$/);
+                        if (dailyMatch) {
+                            const dailyName = dailyMatch[1].trim();
+                            // Skip habit lines that might be in the dailies section
+                            if (!dailyName.startsWith("Habit clicked:") &&
+                                this.itemButtons[dailyName]) {
+                                this.selectedItems[dailyName] = "daily";
+                                this.itemButtons[dailyName].addClass("retrotagger-item-daily");
+                            }
+                        }
+                    }
+                }
+            }
+            // Note: updateSummary() will be called after the summary container is created
+        }
+        catch (error) {
+            console.error("Error loading existing entries:", error);
+        }
+    }
+    // Toggle item selection between Achievement, Daily, and None
+    toggleItemSelection(key) {
+        const button = this.itemButtons[key];
+        if (!this.selectedItems[key]) {
+            // First click: Select as Achievement (blue)
+            this.selectedItems[key] = "achievement";
+            button.removeClass("retrotagger-item-daily");
+            button.addClass("retrotagger-item-achievement");
+        }
+        else if (this.selectedItems[key] === "achievement") {
+            // Second click: Change to Daily (green)
+            this.selectedItems[key] = "daily";
+            button.removeClass("retrotagger-item-achievement");
+            button.addClass("retrotagger-item-daily");
+        }
+        else {
+            // Third click: Deselect
+            delete this.selectedItems[key];
+            button.removeClass("retrotagger-item-achievement");
+            button.removeClass("retrotagger-item-daily");
+        }
+        this.updateSummary();
+    }
+    // Update the summary section with selected items
+    updateSummary() {
+        const achievementsList = this.contentEl.querySelector(".retrotagger-achievements-list");
+        const dailiesList = this.contentEl.querySelector(".retrotagger-dailies-list");
+        if (achievementsList)
+            achievementsList.empty();
+        if (dailiesList)
+            dailiesList.empty();
+        for (const [key, type] of Object.entries(this.selectedItems)) {
+            if (type === "achievement" && achievementsList) {
+                achievementsList.createEl("li", { text: key });
+            }
+            else if (type === "daily" && dailiesList) {
+                dailiesList.createEl("li", { text: key });
+            }
+        }
+    }
+    // Render the selected items to the journal entry
+    async renderSelectedItems() {
+        try {
+            const activeFile = this.app.workspace.getActiveFile();
+            if (!activeFile) {
+                new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("No file is currently open.");
+                return;
+            }
+            let content = await this.app.vault.read(activeFile);
+            // Group items by type, separating new from existing
+            const newAchievements = [];
+            const newDailies = [];
+            // Parse existing entries to avoid duplicates
+            const existingAchievements = await this.getExistingAchievements(content);
+            const existingDailies = await this.getExistingDailies(content);
+            for (const [key, type] of Object.entries(this.selectedItems)) {
+                if (type === "achievement" && !existingAchievements.includes(key)) {
+                    newAchievements.push(key);
+                }
+                else if (type === "daily" && !existingDailies.includes(key)) {
+                    newDailies.push(key);
+                }
+            }
+            // Create the new sections
+            let newContent = "";
+            // Check if the file already has the Achievements section
+            const achievementsRegex = new RegExp(`## Achievements on ${this.journalDate}`);
+            const hasAchievementsSection = achievementsRegex.test(content);
+            // Check if the file already has the Completed Dailies section
+            const dailiesRegex = /## Completed Dailies/;
+            const hasCompletedDailiesSection = dailiesRegex.test(content);
+            if (newAchievements.length > 0) {
+                if (hasAchievementsSection) {
+                    // Append to existing Achievements section
+                    const achievementsSectionRegex = new RegExp(`(## Achievements on ${this.journalDate}[\\s\\S]*?)(?=\\n##|$)`);
+                    const match = content.match(achievementsSectionRegex);
+                    if (match) {
+                        const existingSection = match[1];
+                        const newSection = existingSection +
+                            "\n" +
+                            newAchievements
+                                .map((item) => `* Habit clicked: ${item} - Positive: 1, Negative: 0`)
+                                .join("\n");
+                        content = content.replace(existingSection, newSection);
+                    }
+                }
+                else {
+                    // Create new Achievements section
+                    newContent += `\n## Achievements on ${this.journalDate}\n`;
+                    newContent += newAchievements
+                        .map((item) => `* Habit clicked: ${item} - Positive: 1, Negative: 0`)
+                        .join("\n");
+                }
+            }
+            if (newDailies.length > 0) {
+                if (hasCompletedDailiesSection) {
+                    // Append to existing Completed Dailies section
+                    const dailiesSectionRegex = /## Completed Dailies[\s\S]*?(?=\n##|$)/;
+                    const match = content.match(dailiesSectionRegex);
+                    if (match) {
+                        const existingSection = match[0];
+                        const newSection = existingSection +
+                            "\n" +
+                            newDailies.map((item) => `* ${item}`).join("\n");
+                        content = content.replace(existingSection, newSection);
+                    }
+                }
+                else {
+                    // Create new Completed Dailies section
+                    if (!hasAchievementsSection || newAchievements.length === 0) {
+                        newContent += "\n## Completed Dailies\n";
+                    }
+                    else {
+                        newContent += "\n\n## Completed Dailies\n";
+                    }
+                    newContent += newDailies
+                        .map((item) => `* ${item}`)
+                        .join("\n");
+                }
+            }
+            // Handle insertion of new sections
+            if (newContent) {
+                if (!hasAchievementsSection && !hasCompletedDailiesSection) {
+                    // No existing sections, append at the end
+                    content += newContent;
+                }
+                else if (!hasAchievementsSection && hasCompletedDailiesSection) {
+                    // Insert new content (including Achievements section) before existing Completed Dailies
+                    const dailiesRegex = /(## Completed Dailies)/;
+                    content = content.replace(dailiesRegex, newContent + "\n$1");
+                }
+                else if (hasAchievementsSection && !hasCompletedDailiesSection) {
+                    // Achievements exist but no Completed Dailies, append new Dailies section at the end
+                    content += newContent;
+                }
+            }
+            // Save the changes
+            await this.app.vault.modify(activeFile, content);
+            const totalItems = Object.keys(this.selectedItems).length;
+            const newItemCount = newAchievements.length + newDailies.length;
+            if (newItemCount > 0) {
+                new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`Successfully updated journal entry for ${this.journalDate}. Added ${newItemCount} new items (${totalItems} total selected).`);
+            }
+            else {
+                new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`Journal entry for ${this.journalDate} already contains all selected items.`);
+            }
+        }
+        catch (error) {
+            console.error("Error rendering selected items:", error);
+            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Error updating journal entry. See console for details.");
+        }
+    }
+    // Get existing achievements from content
+    async getExistingAchievements(content) {
+        const achievements = [];
+        const achievementsRegex = new RegExp(`## Achievements on ${this.journalDate}([\\s\\S]*?)(?=\\n##|$)`);
+        const achievementsMatch = content.match(achievementsRegex);
+        if (achievementsMatch) {
+            const achievementsSection = achievementsMatch[1];
+            const habitLines = achievementsSection.match(/\* Habit clicked: ([^-]+)/g);
+            if (habitLines) {
+                for (const line of habitLines) {
+                    const habitMatch = line.match(/\* Habit clicked: ([^-]+)/);
+                    if (habitMatch) {
+                        achievements.push(habitMatch[1].trim());
+                    }
+                }
+            }
+        }
+        return achievements;
+    }
+    // Get existing dailies from content
+    async getExistingDailies(content) {
+        const dailies = [];
+        const dailiesRegex = /## Completed Dailies([\s\S]*?)(?=\n##|$)/;
+        const dailiesMatch = content.match(dailiesRegex);
+        if (dailiesMatch) {
+            const dailiesSection = dailiesMatch[1];
+            const dailyLines = dailiesSection.match(/^\* (.+)$/gm);
+            if (dailyLines) {
+                for (const line of dailyLines) {
+                    const dailyMatch = line.match(/^\* (.+)$/);
+                    if (dailyMatch) {
+                        const dailyName = dailyMatch[1].trim();
+                        // Skip habit lines that might be in the dailies section
+                        if (!dailyName.startsWith("Habit clicked:")) {
+                            dailies.push(dailyName);
+                        }
+                    }
+                }
+            }
+        }
+        return dailies;
+    }
+    // Add CSS styles for the RetroTagger UI
+    addRetroTaggerStyles() {
+        const styles = document.createElement("style");
+        styles.id = "retrotagger-styles";
+        styles.textContent = `
+      .retrotagger-container {
+        padding: 16px;
+      }
+      
+      .retrotagger-instructions {
+        margin-bottom: 16px;
+        padding: 8px;
+        background-color: var(--background-secondary);
+        border-radius: 4px;
+      }
+      
+      .retrotagger-items {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      
+      .retrotagger-item {
+        padding: 8px 12px;
+        border-radius: 4px;
+        background-color: var(--background-secondary);
+        border: none;
+        cursor: pointer;
+      }
+      
+      .retrotagger-item-achievement {
+        background-color: #3498db;
+        color: white;
+      }
+      
+      .retrotagger-item-daily {
+        background-color: #2ecc71;
+        color: white;
+      }
+      
+      .retrotagger-summary {
+        margin-bottom: 16px;
+        padding: 8px;
+        background-color: var(--background-secondary);
+        border-radius: 4px;
+      }
+      
+      .retrotagger-preview-header {
+        color: #fabd2f;
+        margin-top: 12px;
+        margin-bottom: 8px;
+      }
+      
+      .retrotagger-render-button,
+      .retrotagger-cancel-button {
+        padding: 8px 16px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        margin-right: 8px;
+      }
+      
+      .retrotagger-render-button {
+        background-color: var(--interactive-accent);
+        color: var(--text-on-accent);
+      }
+      
+      .retrotagger-cancel-button {
+        background-color: var(--background-modifier-error);
+        color: white;
+      }
+    `;
+        document.head.appendChild(styles);
+    }
+    onClose() {
+        // Clean up styles
+        const styleEl = document.getElementById("retrotagger-styles");
+        if (styleEl)
+            styleEl.remove();
+        const { contentEl } = this;
+        contentEl.empty();
     }
 }
 
@@ -348,8 +1557,8 @@ __webpack_require__.r(__webpack_exports__);
  */
 class SettingsSync {
     constructor(plugin) {
-        this.syncFilePath = ".obsidian/plugins/Habsiad/habsiad-settings.json";
         this.plugin = plugin;
+        this.syncFilePath = `${plugin.app.vault.configDir}/plugins/Habsiad/habsiad-settings.json`;
     }
     /**
      * Save settings to both Obsidian's data.json AND a sync file in the vault
@@ -581,12 +1790,10 @@ class SidebarView extends obsidian__WEBPACK_IMPORTED_MODULE_0__.ItemView {
             return true;
         });
         tabs.forEach((tab) => {
-            const tabButton = tabContainer.createSpan("habsiad-tab");
+            const tabButton = tabContainer.createSpan("habsiad-tab habsiad-clickable");
             tabButton.setText(tab.emoji);
             // Add tooltip to show the tab name on hover
             tabButton.setAttr("title", tab.label);
-            // Ensure cursor pointer is set
-            tabButton.style.cursor = "pointer";
             tabButton.onClickEvent(() => {
                 this.switchTab(tab.view);
                 // Remove active class from all tabs
@@ -775,7 +1982,7 @@ class SidebarView extends obsidian__WEBPACK_IMPORTED_MODULE_0__.ItemView {
         });
         calculateButton.setAttr("style", "margin-bottom: 15px;");
         calculateButton.addEventListener("click", async () => {
-            await this.plugin.calculateCalorieTotals();
+            await this.plugin.calorieCalculations.calculateCalorieTotals();
         });
         const files = journalFolder.children.filter((f) => f instanceof obsidian__WEBPACK_IMPORTED_MODULE_0__.TFile && f.extension === "md");
         const dateFileMap = files
@@ -832,42 +2039,68 @@ class SidebarView extends obsidian__WEBPACK_IMPORTED_MODULE_0__.ItemView {
     }
     displayInfoTab(container) {
         const infoSection = container.createDiv("habsiad-info-section");
-        // Logo container with inline SVG
+        // Logo container with SVG created via DOM API
         const logoContainer = infoSection.createDiv("habsiad-logo-container");
-        logoContainer.innerHTML = `
-      <svg class="habsiad-logo" width="180" height="240" viewBox="0 0 180 240" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <!-- This creates the "carved out" effect. It cuts a hole in the shape of an H. -->
-          <clipPath id="h-cutout">
-            <!-- The outer rectangle defines the visible area, and the inner H-path is subtracted from it. -->
-            <path d="M0,0 H180 V240 H0 Z M75,95 V145 H85 V125 H95 V145 H105 V95 H95 V115 H85 V95 Z" />
-          </clipPath>
-        </defs>
-
-        <!-- Background Layer & Vase silhouette -->
-        <g fill="#1c1c1c">
-          <!-- Main body of the vase -->
-          <path d="M50,230 C0,200 0,100 50,60 L50,40 C50,10 70,10 90,10 C110,10 130,10 130,40 L130,60 C180,100 180,200 130,230 Z" />
-        </g>
-
-        <!-- Orange-red decorative panel with the H carved out -->
-        <g clip-path="url(#h-cutout)">
-          <path fill="#D95737" d="M50,215 C20,190 20,110 50,80 L130,80 C160,110 160,190 130,215 Z" />
-        </g>
-        
-        <!-- Decorative Lines -->
-        <g fill="none" stroke="#1c1c1c" stroke-width="4">
-            <line x1="50" y1="80" x2="130" y2="80" />
-            <line x1="50" y1="215" x2="130" y2="215" />
-        </g>
-
-        <!-- Handles -->
-        <g fill="#1c1c1c">
-           <path d="M50,110 C25,110 25,150 50,150 L50,142 C35,142 35,118 50,118 Z" />
-           <path d="M130,110 C155,110 155,150 130,150 L130,142 C145,142 145,118 130,118 Z" />
-        </g>
-      </svg>
-    `;
+        // Create SVG element using createElementNS for SVG namespace
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("class", "habsiad-logo");
+        svg.setAttribute("width", "180");
+        svg.setAttribute("height", "240");
+        svg.setAttribute("viewBox", "0 0 180 240");
+        // Create defs element
+        const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+        const clipPath = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
+        clipPath.setAttribute("id", "h-cutout");
+        const clipPathData = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        clipPathData.setAttribute("d", "M0,0 H180 V240 H0 Z M75,95 V145 H85 V125 H95 V145 H105 V95 H95 V115 H85 V95 Z");
+        clipPath.appendChild(clipPathData);
+        defs.appendChild(clipPath);
+        // Background Layer & Vase silhouette
+        const backgroundGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        backgroundGroup.setAttribute("fill", "#1c1c1c");
+        const vasePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        vasePath.setAttribute("d", "M50,230 C0,200 0,100 50,60 L50,40 C50,10 70,10 90,10 C110,10 130,10 130,40 L130,60 C180,100 180,200 130,230 Z");
+        backgroundGroup.appendChild(vasePath);
+        // Orange-red decorative panel with the H carved out
+        const decorativeGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        decorativeGroup.setAttribute("clip-path", "url(#h-cutout)");
+        const decorativePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        decorativePath.setAttribute("fill", "#D95737");
+        decorativePath.setAttribute("d", "M50,215 C20,190 20,110 50,80 L130,80 C160,110 160,190 130,215 Z");
+        decorativeGroup.appendChild(decorativePath);
+        // Decorative Lines
+        const linesGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        linesGroup.setAttribute("fill", "none");
+        linesGroup.setAttribute("stroke", "#1c1c1c");
+        linesGroup.setAttribute("stroke-width", "4");
+        const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line1.setAttribute("x1", "50");
+        line1.setAttribute("y1", "80");
+        line1.setAttribute("x2", "130");
+        line1.setAttribute("y2", "80");
+        const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line2.setAttribute("x1", "50");
+        line2.setAttribute("y1", "215");
+        line2.setAttribute("x2", "130");
+        line2.setAttribute("y2", "215");
+        linesGroup.appendChild(line1);
+        linesGroup.appendChild(line2);
+        // Handles
+        const handlesGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        handlesGroup.setAttribute("fill", "#1c1c1c");
+        const handle1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        handle1.setAttribute("d", "M50,110 C25,110 25,150 50,150 L50,142 C35,142 35,118 50,118 Z");
+        const handle2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        handle2.setAttribute("d", "M130,110 C155,110 155,150 130,150 L130,142 C145,142 145,118 130,118 Z");
+        handlesGroup.appendChild(handle1);
+        handlesGroup.appendChild(handle2);
+        // Assemble the SVG
+        svg.appendChild(defs);
+        svg.appendChild(backgroundGroup);
+        svg.appendChild(decorativeGroup);
+        svg.appendChild(linesGroup);
+        svg.appendChild(handlesGroup);
+        logoContainer.appendChild(svg);
         // Version info
         const pluginVersion = this.plugin.manifest.version;
         const versionEl = infoSection.createEl("p", {
@@ -909,8 +2142,19 @@ class SidebarView extends obsidian__WEBPACK_IMPORTED_MODULE_0__.ItemView {
         // Donation button container using a clickable image
         const donationDiv = infoSection.createDiv("habsiad-donation");
         donationDiv.setAttr("style", "margin-top: 5px;");
-        donationDiv.innerHTML =
-            '<a href="https://liberapay.com/dotMavriQ/donate" target="_blank"><img alt="Donate using Liberapay" src="https://img.shields.io/liberapay/patrons/dotMavriQ.svg?logo=liberapay"></a>';
+        // Create donation link using DOM API instead of innerHTML
+        const donationLink = donationDiv.createEl("a", {
+            attr: {
+                href: "https://liberapay.com/dotMavriQ/donate",
+                target: "_blank",
+            },
+        });
+        donationLink.createEl("img", {
+            attr: {
+                alt: "Donate using Liberapay",
+                src: "https://img.shields.io/liberapay/patrons/dotMavriQ.svg?logo=liberapay",
+            },
+        });
     }
 }
 
@@ -1154,10 +2398,7 @@ class DataQualityDiagnosticsView {
             const dateLink = document.createElement("a");
             dateLink.textContent = file.basename.replace(".md", "");
             dateLink.href = "#";
-            dateLink.style.textDecoration = "none";
-            dateLink.style.color = "inherit";
-            dateLink.style.cursor = "pointer";
-            dateLink.classList.add("date-link");
+            dateLink.classList.add("date-link", "habsiad-link");
             dateLink.onclick = (e) => {
                 e.preventDefault();
                 this.app.workspace.openLinkText(file.path, "", true);
@@ -1171,9 +2412,7 @@ class DataQualityDiagnosticsView {
                 starLink.textContent = "⭐";
                 starLink.href = "#";
                 starLink.title = h5Text;
-                starLink.style.textDecoration = "none";
-                starLink.style.cursor = "pointer";
-                starLink.classList.add("star-link");
+                starLink.classList.add("star-link", "habsiad-link");
                 starLink.onclick = (e) => {
                     e.preventDefault();
                     this.app.workspace.openLinkText(file.path, "", true);
@@ -1233,7 +2472,23 @@ class DataQualityDiagnosticsView {
                     goalsIndicator = `<b>${completedTasks}</b>`;
                     goalsTooltip = `${completedTasks} completed tasks`;
                 }
-                workSummaryCell.innerHTML = `${summaryIndicator}, ${goalsIndicator}`;
+                // Use DOM API instead of innerHTML for security
+                workSummaryCell.empty();
+                if (summaryIndicator.includes("<b>")) {
+                    const summaryBold = workSummaryCell.createEl("b");
+                    summaryBold.textContent = summaryIndicator.replace(/<\/?b>/g, "");
+                }
+                else {
+                    workSummaryCell.appendText(summaryIndicator);
+                }
+                workSummaryCell.appendText(", ");
+                if (goalsIndicator.includes("<b>")) {
+                    const goalsBold = workSummaryCell.createEl("b");
+                    goalsBold.textContent = goalsIndicator.replace(/<\/?b>/g, "");
+                }
+                else {
+                    workSummaryCell.appendText(goalsIndicator);
+                }
                 workSummaryCell.title = `${summaryTooltip}, ${goalsTooltip}`;
             }
             // Column E: Food Tracking
@@ -1274,8 +2529,7 @@ class DataQualityDiagnosticsView {
             const displayEmoji = mealEmojis[Math.min(mealCount, 4)];
             const emojiSpan = document.createElement("span");
             emojiSpan.textContent = displayEmoji;
-            emojiSpan.style.cursor = "pointer";
-            emojiSpan.classList.add("emoji-indicator");
+            emojiSpan.classList.add("emoji-indicator", "habsiad-clickable");
             emojiSpan.title = `Total calories: ${totalCalories}`;
             foodCell.appendChild(emojiSpan);
             // Column F: TODO Section
@@ -1305,7 +2559,10 @@ class DataQualityDiagnosticsView {
                 else {
                     const checkedTasks = todoLines.filter((line) => /^- \[[xX]\]/.test(line));
                     const count = checkedTasks.length;
-                    fCell.innerHTML = `<b>${count}</b>`;
+                    // Use DOM API instead of innerHTML for security
+                    fCell.empty();
+                    const countBold = fCell.createEl("b");
+                    countBold.textContent = count.toString();
                     fCell.title = `Amount of TODO-tasks cleared: ${count}`;
                 }
             }
@@ -1336,7 +2593,10 @@ class DataQualityDiagnosticsView {
                 gCell.title = "no Reflections found";
             }
             else {
-                gCell.innerHTML = `<b>${bulletLines.length}</b>`;
+                // Use DOM API instead of innerHTML for security
+                gCell.empty();
+                const countBold = gCell.createEl("b");
+                countBold.textContent = bulletLines.length.toString();
                 gCell.title = `Amount of reflections: ${bulletLines.length}`;
             }
             // Column H: Achievements & Dailies
@@ -1364,7 +2624,10 @@ class DataQualityDiagnosticsView {
                     // Count daily lines in Completed Dailies (lines starting with "* " but not habit lines).
                     const dailiesText = dailiesMatch[1];
                     const dailyLines = dailiesText.match(/^\* (?!Habit clicked:)/gm) || [];
-                    hColCell.innerHTML = `<b>${habitLines.length}, ${dailyLines.length}</b>`;
+                    // Use DOM API instead of innerHTML for security
+                    hColCell.empty();
+                    const countBold = hColCell.createEl("b");
+                    countBold.textContent = `${habitLines.length}, ${dailyLines.length}`;
                     hColCell.title = `Habits: ${habitLines.length}, Dailies: ${dailyLines.length}`;
                 }
             }
@@ -1416,14 +2679,13 @@ __webpack_require__.r(__webpack_exports__);
 
 let glossaryMapping = {};
 const glossaryFileName = "frontmatterGlossary.json";
-// Hardcoded folder name since your plugin folder is "Habsiad"
-const pluginFolder = ".obsidian/plugins/Habsiad";
 /**
  * Loads the glossary mapping from frontmatterGlossary.json.
  * If the file doesn't exist, it creates an empty mapping and writes it.
  * Handles migration from old string-based format to new object format.
  */
 async function loadGlossaryMapping(plugin) {
+    const pluginFolder = `${plugin.app.vault.configDir}/plugins/Habsiad`;
     const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
     try {
         const data = await plugin.app.vault.adapter.read(glossaryPath);
@@ -1462,6 +2724,7 @@ async function loadGlossaryMapping(plugin) {
  * Saves the current glossary mapping to frontmatterGlossary.json with 4-space indentation.
  */
 async function saveGlossaryMapping(plugin) {
+    const pluginFolder = `${plugin.app.vault.configDir}/plugins/Habsiad`;
     const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
     const json = JSON.stringify(glossaryMapping, null, 4);
     await plugin.app.vault.adapter.write(glossaryPath, json);
@@ -1582,30 +2845,26 @@ async function displayGlossaryTable(container, plugin) {
             const isCurrentlyDisabled = isKeyDisabled(key);
             if (hasStoredValue) {
                 // Protected mode: entries with values can't be clicked to disable
-                keyCell.style.cursor = "not-allowed";
-                keyCell.style.opacity = "0.6";
+                keyCell.addClass("habsiad-disabled");
                 keyCell.classList.add("protected-entry");
             }
             else {
                 // Normal mode: empty entries can be clicked to toggle disabled state
-                keyCell.style.cursor = "pointer";
+                keyCell.addClass("habsiad-clickable");
                 // Initialize the display based on stored disabled state
                 if (isCurrentlyDisabled) {
                     input.value = "Data is not gathered from Habitica";
                     input.disabled = true;
-                    input.style.fontStyle = "italic";
-                    input.style.color = "var(--text-muted)";
-                    input.style.backgroundColor =
-                        "var(--background-modifier-form-field-highlighted)";
-                    keyCell.style.backgroundColor = "var(--background-modifier-accent)";
+                    input.addClass("habsiad-input-placeholder");
+                    keyCell.addClass("habsiad-highlighted-cell");
                 }
                 keyCell.addEventListener("click", async () => {
                     // Double-check that no value was added since initialization
                     const currentValue = getHabiticaKey(key).trim();
                     if (currentValue.length > 0) {
                         // Value was added, switch to protected mode
-                        keyCell.style.cursor = "not-allowed";
-                        keyCell.style.opacity = "0.6";
+                        keyCell.removeClass("habsiad-clickable");
+                        keyCell.addClass("habsiad-disabled");
                         keyCell.classList.add("protected-entry");
                         return;
                     }
@@ -1614,21 +2873,16 @@ async function displayGlossaryTable(container, plugin) {
                         // Lock the input field and save state
                         input.value = "Data is not gathered from Habitica";
                         input.disabled = true;
-                        input.style.fontStyle = "italic";
-                        input.style.color = "var(--text-muted)";
-                        input.style.backgroundColor =
-                            "var(--background-modifier-form-field-highlighted)";
-                        keyCell.style.backgroundColor = "var(--background-modifier-accent)";
+                        input.addClass("habsiad-input-placeholder");
+                        keyCell.addClass("habsiad-highlighted-cell");
                         await setKeyDisabled(plugin, key, true);
                     }
                     else {
                         // Unlock the input field and save state
                         input.value = "";
                         input.disabled = false;
-                        input.style.fontStyle = "";
-                        input.style.color = "";
-                        input.style.backgroundColor = "";
-                        keyCell.style.backgroundColor = "";
+                        input.removeClass("habsiad-input-placeholder");
+                        keyCell.removeClass("habsiad-highlighted-cell");
                         await setKeyDisabled(plugin, key, false);
                     }
                 });
@@ -2113,7 +3367,7 @@ class LogsTab {
                     // Add error handling for broken images
                     img.addEventListener("error", () => {
                         console.log(`Failed to load image: ${resolvedImagePath}`);
-                        imageContainer.style.display = "none";
+                        imageContainer.addClass("habsiad-hidden");
                     });
                     // Add success handling
                     img.addEventListener("load", () => {
@@ -2373,499 +3627,39 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _views_sidebarView__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./views/sidebarView */ "./src/views/sidebarView.ts");
 /* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./settings */ "./src/settings.ts");
 /* harmony import */ var _utils_settingsSync__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./utils/settingsSync */ "./src/utils/settingsSync.ts");
+/* harmony import */ var _modals_retroTagger__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./modals/retroTagger */ "./src/modals/retroTagger.ts");
+/* harmony import */ var _commands_habiticaSync__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./commands/habiticaSync */ "./src/commands/habiticaSync.ts");
+/* harmony import */ var _commands_frontmatterUpdates__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./commands/frontmatterUpdates */ "./src/commands/frontmatterUpdates.ts");
+/* harmony import */ var _commands_utilityCommands__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./commands/utilityCommands */ "./src/commands/utilityCommands.ts");
+/* harmony import */ var _commands_calorieCalculations__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./commands/calorieCalculations */ "./src/commands/calorieCalculations.ts");
 
 
 
 
 
-// RetroTagger modal for adding achievements and dailies to journal entries
-class RetroTaggerModal extends obsidian__WEBPACK_IMPORTED_MODULE_0__.Modal {
-    constructor(app, plugin) {
-        super(app);
-        this.selectedItems = {}; // key -> "achievement" or "daily"
-        this.itemButtons = {};
-        this.plugin = plugin;
-        this.journalDate = "";
-    }
-    async onOpen() {
-        const { contentEl } = this;
-        contentEl.empty();
-        // Get current file to check if it's a journal entry
-        const activeFile = this.app.workspace.getActiveFile();
-        if (!activeFile) {
-            contentEl.createEl("div", { text: "No file is currently open." });
-            return;
-        }
-        // Check if the file is in the journal folder and has the YYYY-MM-DD.md format
-        const journalFolderName = this.plugin.settings.journalFolderName || "Journal";
-        const filePathLower = activeFile.path.toLowerCase();
-        const journalFolderLower = journalFolderName.toLowerCase();
-        if (!filePathLower.startsWith(`${journalFolderLower}/`)) {
-            contentEl.createEl("div", {
-                text: `This file is not in the ${journalFolderName} folder.`,
-            });
-            return;
-        }
-        const match = activeFile.name.match(/^(\d{4}-\d{2}-\d{2})\.md$/);
-        if (!match) {
-            contentEl.createEl("div", {
-                text: "This file is not a valid journal entry (YYYY-MM-DD.md format required).",
-            });
-            return;
-        }
-        this.journalDate = match[1];
-        // Create the main container for the retrotagger UI
-        const mainContainer = contentEl.createDiv({ cls: "retrotagger-container" });
-        // Add header
-        mainContainer.createEl("h2", { text: `RetroTagger - ${this.journalDate}` });
-        // Add instructions
-        const instructionsDiv = mainContainer.createDiv({
-            cls: "retrotagger-instructions",
-        });
-        instructionsDiv.createEl("p", {
-            text: "Items already in this journal entry are pre-selected and highlighted.",
-        });
-        instructionsDiv.createEl("p", {
-            text: "Click once on an item to add it to Achievements (blue).",
-        });
-        instructionsDiv.createEl("p", {
-            text: "Click twice on an item to add it to Dailies (green).",
-        });
-        instructionsDiv.createEl("p", { text: "Click a third time to deselect." });
-        // Create container for Habitica items
-        const itemsContainer = mainContainer.createDiv({
-            cls: "retrotagger-items",
-        });
-        // Load the glossary to get Habitica keys
-        const habiticaKeys = await this.loadHabiticaKeys();
-        // Create buttons for each Habitica item
-        for (const habiticaKey of habiticaKeys) {
-            if (!habiticaKey)
-                continue;
-            const itemButton = itemsContainer.createEl("button", {
-                text: habiticaKey,
-                cls: "retrotagger-item",
-            });
-            this.itemButtons[habiticaKey] = itemButton;
-            itemButton.addEventListener("click", () => {
-                this.toggleItemSelection(habiticaKey);
-            });
-        }
-        // Load existing achievements and dailies from the current file
-        await this.loadExistingEntries(activeFile);
-        // Create the "Preview" section to show what will be added
-        const summaryContainer = mainContainer.createDiv({
-            cls: "retrotagger-summary",
-        });
-        summaryContainer.createEl("h3", { text: "Preview" });
-        const achievementsDiv = summaryContainer.createDiv({
-            cls: "retrotagger-achievements",
-        });
-        achievementsDiv.createEl("h4", {
-            text: `Achievements on ${this.journalDate}`,
-            cls: "retrotagger-preview-header",
-        });
-        const achievementsList = achievementsDiv.createEl("ul", {
-            cls: "retrotagger-achievements-list",
-        });
-        const dailiesDiv = summaryContainer.createDiv({
-            cls: "retrotagger-dailies",
-        });
-        dailiesDiv.createEl("h4", {
-            text: "Completed Dailies",
-            cls: "retrotagger-preview-header",
-        });
-        const dailiesList = dailiesDiv.createEl("ul", {
-            cls: "retrotagger-dailies-list",
-        });
-        // Update summary to show loaded existing entries
-        this.updateSummary();
-        // Add the "RetroTag" button
-        const renderButton = mainContainer.createEl("button", {
-            text: "RetroTag",
-            cls: "retrotagger-render-button",
-        });
-        renderButton.addEventListener("click", async () => {
-            await this.renderSelectedItems();
-            this.close();
-        });
-        // Add "Cancel" button
-        const cancelButton = mainContainer.createEl("button", {
-            text: "Cancel",
-            cls: "retrotagger-cancel-button",
-        });
-        cancelButton.addEventListener("click", () => {
-            this.close();
-        });
-        // Add CSS for the RetroTagger UI
-        this.addRetroTaggerStyles();
-    }
-    // Load Habitica keys from the glossary
-    async loadHabiticaKeys() {
-        const pluginFolder = ".obsidian/plugins/Habsiad";
-        const glossaryFileName = "frontmatterGlossary.json";
-        const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
-        try {
-            const data = await this.app.vault.adapter.read(glossaryPath);
-            const glossaryMapping = JSON.parse(data);
-            // Extract unique Habitica keys, handling both old and new format
-            let habiticaKeys = [];
-            for (const value of Object.values(glossaryMapping)) {
-                if (typeof value === "string") {
-                    // Old format: string values
-                    if (value !== "")
-                        habiticaKeys.push(value);
-                }
-                else if (typeof value === "object" && value !== null) {
-                    // New format: object with habiticaKey property
-                    const entry = value;
-                    if (entry.habiticaKey &&
-                        entry.habiticaKey !== "" &&
-                        !entry.isDisabled) {
-                        habiticaKeys.push(entry.habiticaKey);
-                    }
-                }
-            }
-            return habiticaKeys;
-        }
-        catch (error) {
-            console.error("Error loading glossary:", error);
-            return [];
-        }
-    }
-    // Load existing achievements and dailies from the current file
-    async loadExistingEntries(file) {
-        try {
-            const content = await this.app.vault.read(file);
-            // Parse existing achievements
-            const achievementsRegex = new RegExp(`## Achievements on ${this.journalDate}([\\s\\S]*?)(?=\\n##|$)`);
-            const achievementsMatch = content.match(achievementsRegex);
-            if (achievementsMatch) {
-                const achievementsSection = achievementsMatch[1];
-                // Look for lines like "* Habit clicked: HABIT_NAME - Positive: 1, Negative: 0"
-                const habitLines = achievementsSection.match(/\* Habit clicked: ([^-]+)/g);
-                if (habitLines) {
-                    for (const line of habitLines) {
-                        const habitMatch = line.match(/\* Habit clicked: ([^-]+)/);
-                        if (habitMatch) {
-                            const habitName = habitMatch[1].trim();
-                            if (this.itemButtons[habitName]) {
-                                this.selectedItems[habitName] = "achievement";
-                                this.itemButtons[habitName].addClass("retrotagger-item-achievement");
-                            }
-                        }
-                    }
-                }
-            }
-            // Parse existing completed dailies
-            const dailiesRegex = /## Completed Dailies([\s\S]*?)(?=\n##|$)/;
-            const dailiesMatch = content.match(dailiesRegex);
-            if (dailiesMatch) {
-                const dailiesSection = dailiesMatch[1];
-                // Look for lines like "* DAILY_NAME"
-                const dailyLines = dailiesSection.match(/^\* (.+)$/gm);
-                if (dailyLines) {
-                    for (const line of dailyLines) {
-                        const dailyMatch = line.match(/^\* (.+)$/);
-                        if (dailyMatch) {
-                            const dailyName = dailyMatch[1].trim();
-                            // Skip habit lines that might be in the dailies section
-                            if (!dailyName.startsWith("Habit clicked:") &&
-                                this.itemButtons[dailyName]) {
-                                this.selectedItems[dailyName] = "daily";
-                                this.itemButtons[dailyName].addClass("retrotagger-item-daily");
-                            }
-                        }
-                    }
-                }
-            }
-            // Note: updateSummary() will be called after the summary container is created
-        }
-        catch (error) {
-            console.error("Error loading existing entries:", error);
-        }
-    }
-    // Toggle item selection between Achievement, Daily, and None
-    toggleItemSelection(key) {
-        const button = this.itemButtons[key];
-        if (!this.selectedItems[key]) {
-            // First click: Select as Achievement (blue)
-            this.selectedItems[key] = "achievement";
-            button.removeClass("retrotagger-item-daily");
-            button.addClass("retrotagger-item-achievement");
-        }
-        else if (this.selectedItems[key] === "achievement") {
-            // Second click: Change to Daily (green)
-            this.selectedItems[key] = "daily";
-            button.removeClass("retrotagger-item-achievement");
-            button.addClass("retrotagger-item-daily");
-        }
-        else {
-            // Third click: Deselect
-            delete this.selectedItems[key];
-            button.removeClass("retrotagger-item-achievement");
-            button.removeClass("retrotagger-item-daily");
-        }
-        this.updateSummary();
-    }
-    // Update the summary section with selected items
-    updateSummary() {
-        const achievementsList = this.contentEl.querySelector(".retrotagger-achievements-list");
-        const dailiesList = this.contentEl.querySelector(".retrotagger-dailies-list");
-        if (achievementsList)
-            achievementsList.empty();
-        if (dailiesList)
-            dailiesList.empty();
-        for (const [key, type] of Object.entries(this.selectedItems)) {
-            if (type === "achievement" && achievementsList) {
-                achievementsList.createEl("li", { text: key });
-            }
-            else if (type === "daily" && dailiesList) {
-                dailiesList.createEl("li", { text: key });
-            }
-        }
-    }
-    // Render the selected items to the journal entry
-    async renderSelectedItems() {
-        try {
-            const activeFile = this.app.workspace.getActiveFile();
-            if (!activeFile) {
-                new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("No file is currently open.");
-                return;
-            }
-            let content = await this.app.vault.read(activeFile);
-            // Group items by type, separating new from existing
-            const newAchievements = [];
-            const newDailies = [];
-            // Parse existing entries to avoid duplicates
-            const existingAchievements = await this.getExistingAchievements(content);
-            const existingDailies = await this.getExistingDailies(content);
-            for (const [key, type] of Object.entries(this.selectedItems)) {
-                if (type === "achievement" && !existingAchievements.includes(key)) {
-                    newAchievements.push(key);
-                }
-                else if (type === "daily" && !existingDailies.includes(key)) {
-                    newDailies.push(key);
-                }
-            }
-            // Create the new sections
-            let newContent = "";
-            // Check if the file already has the Achievements section
-            const achievementsRegex = new RegExp(`## Achievements on ${this.journalDate}`);
-            const hasAchievementsSection = achievementsRegex.test(content);
-            // Check if the file already has the Completed Dailies section
-            const dailiesRegex = /## Completed Dailies/;
-            const hasCompletedDailiesSection = dailiesRegex.test(content);
-            if (newAchievements.length > 0) {
-                if (hasAchievementsSection) {
-                    // Append to existing Achievements section
-                    const achievementsSectionRegex = new RegExp(`(## Achievements on ${this.journalDate}[\\s\\S]*?)(?=\\n##|$)`);
-                    const match = content.match(achievementsSectionRegex);
-                    if (match) {
-                        const existingSection = match[1];
-                        const newSection = existingSection +
-                            "\n" +
-                            newAchievements
-                                .map((item) => `* Habit clicked: ${item} - Positive: 1, Negative: 0`)
-                                .join("\n");
-                        content = content.replace(existingSection, newSection);
-                    }
-                }
-                else {
-                    // Create new Achievements section
-                    newContent += `\n## Achievements on ${this.journalDate}\n`;
-                    newContent += newAchievements
-                        .map((item) => `* Habit clicked: ${item} - Positive: 1, Negative: 0`)
-                        .join("\n");
-                }
-            }
-            if (newDailies.length > 0) {
-                if (hasCompletedDailiesSection) {
-                    // Append to existing Completed Dailies section
-                    const dailiesSectionRegex = /## Completed Dailies[\s\S]*?(?=\n##|$)/;
-                    const match = content.match(dailiesSectionRegex);
-                    if (match) {
-                        const existingSection = match[0];
-                        const newSection = existingSection +
-                            "\n" +
-                            newDailies.map((item) => `* ${item}`).join("\n");
-                        content = content.replace(existingSection, newSection);
-                    }
-                }
-                else {
-                    // Create new Completed Dailies section
-                    if (!hasAchievementsSection || newAchievements.length === 0) {
-                        newContent += "\n## Completed Dailies\n";
-                    }
-                    else {
-                        newContent += "\n\n## Completed Dailies\n";
-                    }
-                    newContent += newDailies
-                        .map((item) => `* ${item}`)
-                        .join("\n");
-                }
-            }
-            // If we didn't modify existing sections, append the new content
-            if (!hasAchievementsSection &&
-                !hasCompletedDailiesSection &&
-                newContent) {
-                content += newContent;
-            }
-            // Save the changes
-            await this.app.vault.modify(activeFile, content);
-            const totalItems = Object.keys(this.selectedItems).length;
-            const newItemCount = newAchievements.length + newDailies.length;
-            if (newItemCount > 0) {
-                new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`Successfully updated journal entry for ${this.journalDate}. Added ${newItemCount} new items (${totalItems} total selected).`);
-            }
-            else {
-                new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`Journal entry for ${this.journalDate} already contains all selected items.`);
-            }
-        }
-        catch (error) {
-            console.error("Error rendering selected items:", error);
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Error updating journal entry. See console for details.");
-        }
-    }
-    // Get existing achievements from content
-    async getExistingAchievements(content) {
-        const achievements = [];
-        const achievementsRegex = new RegExp(`## Achievements on ${this.journalDate}([\\s\\S]*?)(?=\\n##|$)`);
-        const achievementsMatch = content.match(achievementsRegex);
-        if (achievementsMatch) {
-            const achievementsSection = achievementsMatch[1];
-            const habitLines = achievementsSection.match(/\* Habit clicked: ([^-]+)/g);
-            if (habitLines) {
-                for (const line of habitLines) {
-                    const habitMatch = line.match(/\* Habit clicked: ([^-]+)/);
-                    if (habitMatch) {
-                        achievements.push(habitMatch[1].trim());
-                    }
-                }
-            }
-        }
-        return achievements;
-    }
-    // Get existing dailies from content
-    async getExistingDailies(content) {
-        const dailies = [];
-        const dailiesRegex = /## Completed Dailies([\s\S]*?)(?=\n##|$)/;
-        const dailiesMatch = content.match(dailiesRegex);
-        if (dailiesMatch) {
-            const dailiesSection = dailiesMatch[1];
-            const dailyLines = dailiesSection.match(/^\* (.+)$/gm);
-            if (dailyLines) {
-                for (const line of dailyLines) {
-                    const dailyMatch = line.match(/^\* (.+)$/);
-                    if (dailyMatch) {
-                        const dailyName = dailyMatch[1].trim();
-                        // Skip habit lines that might be in the dailies section
-                        if (!dailyName.startsWith("Habit clicked:")) {
-                            dailies.push(dailyName);
-                        }
-                    }
-                }
-            }
-        }
-        return dailies;
-    }
-    // Add CSS styles for the RetroTagger UI
-    addRetroTaggerStyles() {
-        const styles = document.createElement("style");
-        styles.id = "retrotagger-styles";
-        styles.textContent = `
-      .retrotagger-container {
-        padding: 16px;
-      }
-      
-      .retrotagger-instructions {
-        margin-bottom: 16px;
-        padding: 8px;
-        background-color: var(--background-secondary);
-        border-radius: 4px;
-      }
-      
-      .retrotagger-items {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 16px;
-      }
-      
-      .retrotagger-item {
-        padding: 8px 12px;
-        border-radius: 4px;
-        background-color: var(--background-secondary);
-        border: none;
-        cursor: pointer;
-      }
-      
-      .retrotagger-item-achievement {
-        background-color: #3498db;
-        color: white;
-      }
-      
-      .retrotagger-item-daily {
-        background-color: #2ecc71;
-        color: white;
-      }
-      
-      .retrotagger-summary {
-        margin-bottom: 16px;
-        padding: 8px;
-        background-color: var(--background-secondary);
-        border-radius: 4px;
-      }
-      
-      .retrotagger-preview-header {
-        color: #fabd2f;
-        margin-top: 12px;
-        margin-bottom: 8px;
-      }
-      
-      .retrotagger-render-button,
-      .retrotagger-cancel-button {
-        padding: 8px 16px;
-        border-radius: 4px;
-        border: none;
-        cursor: pointer;
-        margin-right: 8px;
-      }
-      
-      .retrotagger-render-button {
-        background-color: var(--interactive-accent);
-        color: var(--text-on-accent);
-      }
-      
-      .retrotagger-cancel-button {
-        background-color: var(--background-modifier-error);
-        color: white;
-      }
-    `;
-        document.head.appendChild(styles);
-    }
-    onClose() {
-        // Clean up styles
-        const styleEl = document.getElementById("retrotagger-styles");
-        if (styleEl)
-            styleEl.remove();
-        const { contentEl } = this;
-        contentEl.empty();
-    }
-}
+
+
+
+
+
 class HabsiadPlugin extends obsidian__WEBPACK_IMPORTED_MODULE_0__.Plugin {
     constructor() {
         super(...arguments);
         this.settings = _settings__WEBPACK_IMPORTED_MODULE_3__.DEFAULT_SETTINGS; // ✅ Ensures initialization
     }
     async onload() {
-        console.log("Loading Habsiad Plugin");
+        // Plugin loading is now handled by Obsidian's internal logging
         // Initialize settings sync
         this.settingsSync = new _utils_settingsSync__WEBPACK_IMPORTED_MODULE_4__.SettingsSync(this);
         // Load settings (with cross-device sync support)
         await this.loadSettings();
         // Initialize Habitica Service
         this.habiticaService = new _habitica_habiticaService__WEBPACK_IMPORTED_MODULE_1__.HabiticaService(this);
+        // Initialize command handlers
+        this.habiticaSyncCommand = new _commands_habiticaSync__WEBPACK_IMPORTED_MODULE_6__.HabiticaSyncCommand(this);
+        this.frontmatterCommands = new _commands_frontmatterUpdates__WEBPACK_IMPORTED_MODULE_7__.FrontmatterCommands(this);
+        this.utilityCommands = new _commands_utilityCommands__WEBPACK_IMPORTED_MODULE_8__.UtilityCommands(this);
+        this.calorieCalculations = new _commands_calorieCalculations__WEBPACK_IMPORTED_MODULE_9__.CalorieCalculations(this);
         // Add settings tab
         this.addSettingTab(new _settings__WEBPACK_IMPORTED_MODULE_3__.HabsiadSettingTab(this.app, this));
         // Register the sidebar view
@@ -2878,43 +3672,43 @@ class HabsiadPlugin extends obsidian__WEBPACK_IMPORTED_MODULE_0__.Plugin {
         this.addCommand({
             id: "generate-habits-and-dailies",
             name: "Generate Habits & Dailies",
-            callback: () => this.generateHabitsAndDailies(),
-            hotkeys: [this.settings.shortcuts.generateHabitsAndDailies],
+            callback: () => this.habiticaSyncCommand.generateHabitsAndDailies(),
         });
         // Register the command to replace {WEEKDAY} with the correct day (Manual Trigger)
         this.addCommand({
             id: "replace-weekday",
             name: "Replace {WEEKDAY} with Actual Day",
-            callback: () => this.replaceWeekday(),
-            hotkeys: [this.settings.shortcuts.replaceWeekday],
+            callback: () => this.utilityCommands.replaceWeekday(),
         });
         // Register the TODO-Sync command
         this.addCommand({
             id: "sync-todo",
             name: "Sync Habitica TODO",
-            callback: () => this.syncTodo(),
-            hotkeys: [this.settings.shortcuts.syncTodo],
+            callback: () => this.utilityCommands.syncTodo(),
         });
         // Register the Habitica to Frontmatter sync command
         this.addCommand({
             id: "sync-habitica-to-frontmatter",
             name: "Sync Habitica to Frontmatter",
             callback: () => this.syncHabiticaToFrontmatter(),
-            hotkeys: [this.settings.shortcuts.syncHabiticaToFrontmatter],
+        });
+        // Register the Basic Habitica Stats sync command
+        this.addCommand({
+            id: "sync-basic-habitica-stats",
+            name: "Sync Basic Habitica Stats",
+            callback: () => this.utilityCommands.syncBasicHabiticaStats(),
         });
         // Register the Calculate Calorie Totals command
         this.addCommand({
             id: "calculate-calorie-totals",
             name: "Calculate Calorie Totals",
-            callback: () => this.calculateCalorieTotals(),
-            hotkeys: [this.settings.shortcuts.calculateCalorieTotals],
+            callback: () => this.calorieCalculations.calculateCalorieTotals(),
         });
         // Register the Retrotagger command
         this.addCommand({
             id: "open-retrotagger",
             name: "Open Retrotagger",
             callback: () => this.openRetrotagger(),
-            hotkeys: [this.settings.shortcuts.openRetrotagger],
         });
         // Register settings sync commands
         this.addCommand({
@@ -2937,14 +3731,14 @@ class HabsiadPlugin extends obsidian__WEBPACK_IMPORTED_MODULE_0__.Plugin {
                 // Read the file content to check for the placeholder
                 const content = await this.app.vault.read(file);
                 if (content.includes("# {WEEKDAY}")) {
-                    this.replaceWeekday(file);
+                    this.utilityCommands.replaceWeekday(file);
                 }
             }
         }));
     }
     onunload() {
-        console.log("Unloading Habsiad Plugin");
-        this.app.workspace.detachLeavesOfType(_views_sidebarView__WEBPACK_IMPORTED_MODULE_2__.VIEW_TYPE_SIDEBAR);
+        // Plugin unloading is now handled by Obsidian's internal logging
+        // Note: Not detaching leaves as per Obsidian guidelines - leaves should persist
     }
     async activateSidebar() {
         if (this.app.workspace.getLeavesOfType(_views_sidebarView__WEBPACK_IMPORTED_MODULE_2__.VIEW_TYPE_SIDEBAR).length === 0) {
@@ -2977,488 +3771,25 @@ class HabsiadPlugin extends obsidian__WEBPACK_IMPORTED_MODULE_0__.Plugin {
      * Allows users to retroactively add achievements and dailies to journal entries.
      */
     openRetrotagger() {
-        const modal = new RetroTaggerModal(this.app, this);
+        const modal = new _modals_retroTagger__WEBPACK_IMPORTED_MODULE_5__.RetroTaggerModal(this.app, this);
         modal.open();
     }
-    async generateHabitsAndDailies() {
-        const activeView = this.app.workspace.getActiveViewOfType(obsidian__WEBPACK_IMPORTED_MODULE_0__.MarkdownView);
-        if (!activeView) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Please open a Markdown file to insert Habitica data.");
-            return;
-        }
-        const file = activeView.file;
-        if (!file) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("No file is open. Please open a Markdown file.");
-            return;
-        }
-        const journalFolderName = this.settings.journalFolderName || "Journal";
-        if (!file.path.toLowerCase().startsWith(`${journalFolderName.toLowerCase()}/`)) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`This command can only be used in the ${journalFolderName} folder.`);
-            return;
-        }
-        const fileNamePattern = /^\d{4}-\d{2}-\d{2}\.md$/;
-        if (!fileNamePattern.test(file.name)) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("This command can only be used in daily journal notes.");
-            return;
-        }
-        const { habiticaUserId, habiticaApiToken } = this.settings;
-        if (!habiticaUserId || !habiticaApiToken) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Please enter your Habitica credentials in the Habsiad settings.");
-            return;
-        }
-        await this.insertHabitsAndDailies(activeView);
-    }
     async saveCustomFrontmatterName(key, value) {
-        if (!this.settings.customFrontmatter) {
-            this.settings.customFrontmatter = {};
-        }
-        this.settings.customFrontmatter[key] = value;
-        await this.saveSettings();
+        await this.frontmatterCommands.saveCustomFrontmatterName(key, value);
     }
     getCustomFrontmatterName(key) {
         var _a;
         return ((_a = this.settings.customFrontmatter) === null || _a === void 0 ? void 0 : _a[key]) || "";
     }
-    async insertHabitsAndDailies(activeView) {
-        try {
-            const tasks = await this.habiticaService.getTasks();
-            const habitsOutput = tasks
-                .filter((task) => task.type === "habit" &&
-                (task.counterUp > 0 || task.counterDown > 0))
-                .map((task) => `* Habit clicked: ${task.text} - Positive: ${task.counterUp}, Negative: ${task.counterDown}`)
-                .join("\n");
-            const dailiesOutput = tasks
-                .filter((task) => task.type === "daily" && task.completed)
-                .map((task) => `* ${task.text}`)
-                .join("\n");
-            const today = window.moment().format("YYYY-MM-DD");
-            const output = `## Achievements on ${today}\n${habitsOutput}\n\n## Completed Dailies\n${dailiesOutput}`;
-            const editor = activeView.editor;
-            editor.replaceRange(output, editor.getCursor());
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Habits and Dailies inserted successfully.");
-        }
-        catch (error) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Failed to fetch Habitica tasks. Check console for details.");
-            console.error("Error fetching Habitica tasks:", error);
-        }
-    }
-    /**
-     * Updates the "steps" field inside the frontmatter of a journal entry.
-     * If frontmatter exists, modifies the "steps" field.
-     * If frontmatter is missing, adds it to the file.
-     */
+    // Wrapper methods for frontmatter commands (for backward compatibility with views)
     async updateStepsFrontmatter(file, newSteps) {
-        let content = await this.app.vault.read(file);
-        // Locate frontmatter section
-        const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
-        const match = content.match(frontmatterRegex);
-        let newContent;
-        if (match) {
-            const frontmatterText = match[1];
-            // Modify the "steps" value or insert if not found
-            const updatedFrontmatter = frontmatterText
-                .split("\n")
-                .map((line) => line.startsWith("steps:") ? `steps: ${newSteps}` : line)
-                .join("\n");
-            newContent = content.replace(frontmatterRegex, `---\n${updatedFrontmatter}\n---`);
-        }
-        else {
-            // If no frontmatter exists, create it
-            newContent = `---\nsteps: ${newSteps}\n---\n\n${content}`;
-        }
-        // Save the updated file
-        await this.app.vault.modify(file, newContent);
+        await this.frontmatterCommands.updateStepsFrontmatter(file, newSteps);
     }
-    /**
-     * Updates the "weight" field inside the frontmatter of a journal entry.
-     * If frontmatter exists, modifies the "weight" field.
-     * If frontmatter is missing, adds it to the file.
-     */
     async updateWeightFrontmatter(file, newWeight) {
-        let content = await this.app.vault.read(file);
-        // Locate frontmatter section
-        const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
-        const match = content.match(frontmatterRegex);
-        let newContent;
-        if (match) {
-            const frontmatterText = match[1];
-            // Check if the "weight" field already exists
-            const hasWeightField = frontmatterText
-                .split("\n")
-                .some((line) => line.startsWith("weight:"));
-            if (hasWeightField) {
-                // Modify the existing "weight" value
-                const updatedFrontmatter = frontmatterText
-                    .split("\n")
-                    .map((line) => line.startsWith("weight:") ? `weight: ${newWeight}` : line)
-                    .join("\n");
-                newContent = content.replace(frontmatterRegex, `---\n${updatedFrontmatter}\n---`);
-            }
-            else {
-                // Add the "weight" field to the existing frontmatter
-                const updatedFrontmatter = frontmatterText + `\nweight: ${newWeight}`;
-                newContent = content.replace(frontmatterRegex, `---\n${updatedFrontmatter}\n---`);
-            }
-        }
-        else {
-            // If no frontmatter exists, create it
-            newContent = `---\nweight: ${newWeight}\n---\n\n${content}`;
-        }
-        // Save the updated file
-        await this.app.vault.modify(file, newContent);
+        await this.frontmatterCommands.updateWeightFrontmatter(file, newWeight);
     }
-    /**
-     * Updates the "calories" field inside the frontmatter of a journal entry.
-     * If frontmatter exists, modifies the "calories" field.
-     * If frontmatter is missing, adds it to the file.
-     */
     async updateCaloriesFrontmatter(file, newCalories) {
-        let content = await this.app.vault.read(file);
-        // Locate frontmatter section
-        const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
-        const match = content.match(frontmatterRegex);
-        let newContent;
-        if (match) {
-            const frontmatterText = match[1];
-            // Check if the "calories" field already exists
-            const hasCaloriesField = frontmatterText
-                .split("\n")
-                .some((line) => line.startsWith("calories:"));
-            if (hasCaloriesField) {
-                // Modify the existing "calories" value
-                const updatedFrontmatter = frontmatterText
-                    .split("\n")
-                    .map((line) => line.startsWith("calories:") ? `calories: ${newCalories}` : line)
-                    .join("\n");
-                newContent = content.replace(frontmatterRegex, `---\n${updatedFrontmatter}\n---`);
-            }
-            else {
-                // Add the "calories" field to the existing frontmatter
-                const updatedFrontmatter = frontmatterText + `\ncalories: ${newCalories}`;
-                newContent = content.replace(frontmatterRegex, `---\n${updatedFrontmatter}\n---`);
-            }
-        }
-        else {
-            // If no frontmatter exists, create it
-            newContent = `---\ncalories: ${newCalories}\n---\n\n${content}`;
-        }
-        // Save the updated file
-        await this.app.vault.modify(file, newContent);
-    }
-    /**
-     * Calculates calorie totals by properly parsing the EST.CALORIES column in markdown tables
-     * and updating the calories frontmatter key with the sum.
-     */
-    async calculateCalorieTotals() {
-        const journalFolderName = this.settings.journalFolderName || "Journal";
-        const journalFolder = this.app.vault.getAbstractFileByPath(journalFolderName);
-        if (!journalFolder || !(journalFolder instanceof obsidian__WEBPACK_IMPORTED_MODULE_0__.TFolder)) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`Journal folder "${journalFolderName}" not found.`);
-            return;
-        }
-        // Get all journal files with YYYY-MM-DD.md format
-        const journalFiles = journalFolder.children
-            .filter((file) => file instanceof obsidian__WEBPACK_IMPORTED_MODULE_0__.TFile && file.name.match(/^\d{4}-\d{2}-\d{2}\.md$/))
-            .sort((a, b) => b.name.localeCompare(a.name)); // Sort by date descending
-        let filesProcessed = 0;
-        let filesUpdated = 0;
-        // Function to debug print a raw markdown table for inspection
-        const debugPrintTable = (tableName, tableText) => {
-            console.log(`\n--- ${tableName} ---`);
-            console.log(tableText);
-            console.log("-------------------\n");
-        };
-        for (const file of journalFiles) {
-            filesProcessed++;
-            const content = await this.app.vault.read(file);
-            // Very specific approach: Look for a markdown table that has EST.CALORIES in the header
-            // The crucial part is to properly parse the table structure with vertical bars
-            // Start by looking at the content line by line, but preserve the exact format of each line
-            const lines = content.split("\n");
-            let foundCalorieTable = false;
-            let calorieTableLines = [];
-            let tableStartLine = 0;
-            // First find a table with EST.CALORIES in the header
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                // Look for a header row that contains EST.CALORIES
-                if (line.includes("EST.CALORIES") &&
-                    line.startsWith("|") &&
-                    line.endsWith("|")) {
-                    foundCalorieTable = true;
-                    tableStartLine = i;
-                    break;
-                }
-            }
-            if (!foundCalorieTable) {
-                // No calorie table found in this file
-                console.log(`No table with EST.CALORIES found in ${file.name}`);
-                continue;
-            }
-            // Now extract the complete table
-            let tableEndLine = tableStartLine;
-            for (let i = tableStartLine; i < lines.length; i++) {
-                const line = lines[i];
-                if (line.startsWith("|") && line.endsWith("|")) {
-                    calorieTableLines.push(line);
-                    tableEndLine = i;
-                }
-                else if (i > tableStartLine) {
-                    // We've reached the end of the table
-                    break;
-                }
-            }
-            // Make sure we have a header and at least one data row
-            if (calorieTableLines.length < 3) {
-                console.log(`Table too short in ${file.name}, found ${calorieTableLines.length} lines`);
-                continue;
-            }
-            const tableText = calorieTableLines.join("\n");
-            debugPrintTable(`Table in ${file.name}`, tableText);
-            // Parse the header to find the column index for EST.CALORIES
-            const headerLine = calorieTableLines[0];
-            const headerCells = headerLine.split("|").map((cell) => cell.trim());
-            // Find the index of the EST.CALORIES column (accounting for the empty cells at start/end)
-            let estCaloriesColumnIndex = -1;
-            for (let i = 0; i < headerCells.length; i++) {
-                if (headerCells[i].toUpperCase() === "EST.CALORIES") {
-                    estCaloriesColumnIndex = i;
-                    break;
-                }
-            }
-            if (estCaloriesColumnIndex === -1) {
-                console.log(`Could not find EST.CALORIES column in header: ${headerLine}`);
-                continue;
-            }
-            console.log(`EST.CALORIES column is at index ${estCaloriesColumnIndex} in ${file.name}`);
-            // Now process each data row (skipping header and separator)
-            let totalCalories = 0;
-            for (let i = 2; i < calorieTableLines.length; i++) {
-                const dataLine = calorieTableLines[i];
-                const dataCells = dataLine.split("|");
-                // Ensure the array has enough elements to access the EST.CALORIES column
-                if (dataCells.length <= estCaloriesColumnIndex) {
-                    console.log(`Row has insufficient columns: ${dataLine}`);
-                    continue;
-                }
-                // Get the actual cell content at the EST.CALORIES position
-                const calorieCell = dataCells[estCaloriesColumnIndex].trim();
-                console.log(`Processing cell: "${calorieCell}" in ${file.name}`);
-                // Skip empty cells or cells with just whitespace
-                if (!calorieCell || calorieCell === "") {
-                    console.log(`Empty calorie cell in row: ${dataLine}`);
-                    continue;
-                }
-                // Try to extract a number from the cell
-                // This regex looks for one or more digits, ignoring any surrounding text
-                const numberMatch = calorieCell.match(/\d+/);
-                if (numberMatch) {
-                    const calories = parseInt(numberMatch[0], 10);
-                    if (!isNaN(calories) && calories > 0) {
-                        console.log(`Found ${calories} calories in ${file.name} at line ${tableStartLine + i}`);
-                        totalCalories += calories;
-                    }
-                }
-            }
-            if (totalCalories > 0) {
-                console.log(`Total calories in ${file.name}: ${totalCalories}`);
-                // Update the frontmatter with the calculated total
-                await this.updateCaloriesFrontmatter(file, totalCalories.toString());
-                filesUpdated++;
-            }
-            else {
-                console.log(`No valid calories found in ${file.name}`);
-            }
-        }
-        if (filesUpdated > 0) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`Updated calorie totals in ${filesUpdated} of ${filesProcessed} journal files.`);
-        }
-        else {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`No valid calorie data found. Checked ${filesProcessed} journal files.`);
-        }
-    }
-    /**
-     * Replaces {WEEKDAY} with the actual day of the week based on the filename.
-     * Runs manually (via command) or automatically when a new file is created.
-     */
-    async replaceWeekday(file) {
-        var _a;
-        // Get the active file if no specific file is passed
-        if (!file) {
-            const activeView = this.app.workspace.getActiveViewOfType(obsidian__WEBPACK_IMPORTED_MODULE_0__.MarkdownView);
-            file = (_a = activeView === null || activeView === void 0 ? void 0 : activeView.file) !== null && _a !== void 0 ? _a : undefined;
-        }
-        // Ensure a valid TFile is provided
-        if (!file) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Please open a journal entry.");
-            return;
-        }
-        // Check if the file matches the expected yyyy-mm-dd.md pattern
-        const fileName = file.name;
-        const match = fileName.match(/^(\d{4})-(\d{2})-(\d{2})\.md$/);
-        if (!match) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("This is not a valid journal file.");
-            return;
-        }
-        const [_, year, month, day] = match;
-        const date = new Date(`${year}-${month}-${day}`);
-        const weekday = date
-            .toLocaleDateString("en-US", { weekday: "long" })
-            .toUpperCase();
-        // Read the file's content
-        let content = await this.app.vault.read(file);
-        // Handle frontmatter: Find where it ends (after the second "---")
-        const frontmatterEnd = content.indexOf("---", 3); // Find the second "---"
-        const bodyStartIndex = frontmatterEnd !== -1 ? frontmatterEnd + 3 : 0; // Skip past "---\n"
-        const bodyContent = content.slice(bodyStartIndex);
-        // Replace "# {WEEKDAY}" with the actual weekday
-        const updatedBodyContent = bodyContent.replace(/^# \{WEEKDAY\}/m, `# ${weekday}`);
-        // If no changes were made, notify the user and return
-        if (bodyContent === updatedBodyContent) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("No changes were made; # {WEEKDAY} not found.");
-            return;
-        }
-        // Reassemble the content (frontmatter + updated body)
-        const updatedContent = content.slice(0, bodyStartIndex) + updatedBodyContent;
-        // Save the updated content back to the file
-        await this.app.vault.modify(file, updatedContent);
-        new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice(`Updated {WEEKDAY} to ${weekday}`);
-    }
-    /**
-     * Syncs the TODO section of the active journal file with Habitica tasks.
-     * - It verifies the file is in YYYY-MM-DD.md format.
-     * - It locates the "### TODO:" header and determines the block boundaries.
-     * - If the block is in its stock state (default tasks), it replaces it entirely.
-     * - Otherwise, it merges new Habitica tasks with existing tasks without erasing them.
-     */
-    async syncTodo() {
-        // Get the active file
-        const activeFile = this.app.workspace.getActiveFile();
-        if (!activeFile) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("No active file found.");
-            return;
-        }
-        // Check that the file name is in the format YYYY-MM-DD.md
-        if (!/^\d{4}-\d{2}-\d{2}\.md$/.test(activeFile.name)) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("This command only works on journal files (YYYY-MM-DD.md).");
-            return;
-        }
-        // Read the file content
-        let content = await this.app.vault.read(activeFile);
-        const lines = content.split("\n");
-        // Locate the TODO header; we expect a line exactly "### TODO:"
-        let todoStart = -1;
-        let todoEnd = lines.length;
-        for (let i = 0; i < lines.length; i++) {
-            if (/^### TODO:\s*$/.test(lines[i])) {
-                todoStart = i;
-                // Look for the next markdown header (line starting with '#' and a space)
-                for (let j = i + 1; j < lines.length; j++) {
-                    if (/^#{1,6}\s/.test(lines[j])) {
-                        todoEnd = j;
-                        break;
-                    }
-                }
-                break;
-            }
-        }
-        if (todoStart === -1) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("No TODO header found in this file.");
-            return;
-        }
-        // Extract the current TODO block (including header)
-        const currentTodoBlock = lines.slice(todoStart, todoEnd).join("\n");
-        // Define the stock default block for comparison
-        const defaultBlock = "### TODO:\n- [ ] Task 1\n- [ ] Task 2\n- [ ] Task 3";
-        // Fetch Habitica TODO tasks using stored credentials
-        const userId = this.settings.habiticaUserId;
-        const apiToken = this.settings.habiticaApiToken;
-        if (!userId || !apiToken) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Habitica credentials are missing in settings.");
-            return;
-        }
-        const apiUrl = "https://habitica.com/api/v3/tasks/user?type=todos";
-        let response;
-        try {
-            response = await fetch(apiUrl, {
-                headers: {
-                    "x-api-user": userId,
-                    "x-api-key": apiToken,
-                },
-            });
-        }
-        catch (err) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Error fetching Habitica tasks.");
-            console.error(err);
-            return;
-        }
-        if (!response.ok) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Failed to fetch tasks from Habitica.");
-            return;
-        }
-        const data = await response.json();
-        if (data.success !== true) {
-            new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("Habitica API response unsuccessful.");
-            return;
-        }
-        // Filter for incomplete TODO tasks
-        const todos = data.data.filter((todo) => !todo.completed);
-        // Build a Habitica tasks block string.
-        let habiticaBlock = "";
-        for (const todo of todos) {
-            let line = `- [ ] ${todo.text}`;
-            habiticaBlock += "\n" + line;
-            if (todo.notes && todo.notes.trim().length > 0) {
-                habiticaBlock += "\n    _" + todo.notes.trim() + "_";
-            }
-            if (todo.checklist &&
-                Array.isArray(todo.checklist) &&
-                todo.checklist.length > 0) {
-                for (const check of todo.checklist) {
-                    const checkLine = `- [${check.completed ? "x" : " "}] ${check.text}`;
-                    habiticaBlock += "\n    " + checkLine;
-                }
-            }
-        }
-        let newTodoBlock = "";
-        // If the current TODO block exactly matches the stock default, replace it entirely.
-        if (currentTodoBlock.trim() === defaultBlock.trim()) {
-            newTodoBlock = "### TODO:" + habiticaBlock;
-        }
-        else {
-            // Otherwise, merge Habitica tasks with existing tasks.
-            // Preserve existing lines (which may include completed tasks or custom notes).
-            const existingTaskLines = lines.slice(todoStart + 1, todoEnd);
-            const mergedTasks = [...existingTaskLines];
-            // For each Habitica task, if its text is not already present, append it.
-            for (const todo of todos) {
-                const exists = existingTaskLines.some((line) => line.includes(todo.text));
-                if (!exists) {
-                    let newLine = `- [ ] ${todo.text}`;
-                    if (todo.notes && todo.notes.trim().length > 0) {
-                        newLine += "\n    _" + todo.notes.trim() + "_";
-                    }
-                    if (todo.checklist &&
-                        Array.isArray(todo.checklist) &&
-                        todo.checklist.length > 0) {
-                        for (const check of todo.checklist) {
-                            const checkLine = `- [${check.completed ? "x" : " "}] ${check.text}`;
-                            newLine += "\n    " + checkLine;
-                        }
-                    }
-                    mergedTasks.push(newLine);
-                }
-            }
-            newTodoBlock = "### TODO:\n" + mergedTasks.join("\n");
-        }
-        // Reconstruct the file content by replacing the old TODO block with the new one.
-        const newContent = [
-            ...lines.slice(0, todoStart),
-            newTodoBlock,
-            ...lines.slice(todoEnd),
-        ].join("\n");
-        await this.app.vault.modify(activeFile, newContent);
-        new obsidian__WEBPACK_IMPORTED_MODULE_0__.Notice("TODO section synced with Habitica tasks.");
+        await this.frontmatterCommands.updateCaloriesFrontmatter(file, newCalories);
     }
     /**
      * Syncs Habitica data to frontmatter in all journal files.
@@ -3475,7 +3806,7 @@ class HabsiadPlugin extends obsidian__WEBPACK_IMPORTED_MODULE_0__.Plugin {
             return;
         }
         // Get the frontmatter glossary mapping
-        const pluginFolder = ".obsidian/plugins/Habsiad";
+        const pluginFolder = `${this.app.vault.configDir}/plugins/Habsiad`;
         const glossaryFileName = "frontmatterGlossary.json";
         const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
         let glossaryMapping = {};

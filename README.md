@@ -10,4 +10,4 @@ Download the latest release from the GitHub releases page.
 
 ## Version
 
-Current version: 1.5.2
+Current version: 1.6.0

@@ -912,4 +912,40 @@ button,
   }
 }
 
+/* Compliance fixes: Replace inline styles with CSS classes */
+.habsiad-clickable {
+  cursor: pointer;
+}
+
+.habsiad-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.habsiad-input-placeholder {
+  font-style: italic;
+  color: var(--text-muted);
+  background-color: var(--background-modifier-hover);
+}
+
+.habsiad-highlighted-cell {
+  background-color: var(--background-modifier-accent);
+}
+
+.habsiad-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.habsiad-hidden {
+  display: none;
+}
+
+.habsiad-input-normal {
+  font-style: normal;
+  color: var(--text-normal);
+  background-color: var(--background-primary);
+}
+
 
