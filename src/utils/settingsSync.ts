@@ -8,11 +8,11 @@ import { HabsiadSettings } from "../settings";
  */
 export class SettingsSync {
   private plugin: HabsiadPlugin;
-  private syncFilePath: string =
-    ".obsidian/plugins/Habsiad/habsiad-settings.json";
+  private syncFilePath: string;
 
   constructor(plugin: HabsiadPlugin) {
     this.plugin = plugin;
+    this.syncFilePath = `${plugin.app.vault.configDir}/plugins/Habsiad/habsiad-settings.json`;
   }
 
   /**

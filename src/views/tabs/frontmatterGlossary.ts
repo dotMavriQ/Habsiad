@@ -8,8 +8,6 @@ interface GlossaryEntry {
 
 let glossaryMapping: { [key: string]: GlossaryEntry } = {};
 const glossaryFileName = "frontmatterGlossary.json";
-// Hardcoded folder name since your plugin folder is "Habsiad"
-const pluginFolder = ".obsidian/plugins/Habsiad";
 
 /**
  * Loads the glossary mapping from frontmatterGlossary.json.
@@ -17,6 +15,7 @@ const pluginFolder = ".obsidian/plugins/Habsiad";
  * Handles migration from old string-based format to new object format.
  */
 async function loadGlossaryMapping(plugin: HabsiadPlugin): Promise<void> {
+  const pluginFolder = `${plugin.app.vault.configDir}/plugins/Habsiad`;
   const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
   try {
     const data = await plugin.app.vault.adapter.read(glossaryPath);
@@ -58,6 +57,7 @@ async function loadGlossaryMapping(plugin: HabsiadPlugin): Promise<void> {
  * Saves the current glossary mapping to frontmatterGlossary.json with 4-space indentation.
  */
 async function saveGlossaryMapping(plugin: HabsiadPlugin): Promise<void> {
+  const pluginFolder = `${plugin.app.vault.configDir}/plugins/Habsiad`;
   const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
   const json = JSON.stringify(glossaryMapping, null, 4);
   await plugin.app.vault.adapter.write(glossaryPath, json);
@@ -218,22 +218,18 @@ export async function displayGlossaryTable(
 
       if (hasStoredValue) {
         // Protected mode: entries with values can't be clicked to disable
-        keyCell.style.cursor = "not-allowed";
-        keyCell.style.opacity = "0.6";
+        keyCell.addClass("habsiad-disabled");
         keyCell.classList.add("protected-entry");
       } else {
         // Normal mode: empty entries can be clicked to toggle disabled state
-        keyCell.style.cursor = "pointer";
+        keyCell.addClass("habsiad-clickable");
 
         // Initialize the display based on stored disabled state
         if (isCurrentlyDisabled) {
           input.value = "Data is not gathered from Habitica";
           input.disabled = true;
-          input.style.fontStyle = "italic";
-          input.style.color = "var(--text-muted)";
-          input.style.backgroundColor =
-            "var(--background-modifier-form-field-highlighted)";
-          keyCell.style.backgroundColor = "var(--background-modifier-accent)";
+          input.addClass("habsiad-input-placeholder");
+          keyCell.addClass("habsiad-highlighted-cell");
         }
 
         keyCell.addEventListener("click", async () => {
@@ -241,8 +237,8 @@ export async function displayGlossaryTable(
           const currentValue = getHabiticaKey(key).trim();
           if (currentValue.length > 0) {
             // Value was added, switch to protected mode
-            keyCell.style.cursor = "not-allowed";
-            keyCell.style.opacity = "0.6";
+            keyCell.removeClass("habsiad-clickable");
+            keyCell.addClass("habsiad-disabled");
             keyCell.classList.add("protected-entry");
             return;
           }
@@ -253,20 +249,15 @@ export async function displayGlossaryTable(
             // Lock the input field and save state
             input.value = "Data is not gathered from Habitica";
             input.disabled = true;
-            input.style.fontStyle = "italic";
-            input.style.color = "var(--text-muted)";
-            input.style.backgroundColor =
-              "var(--background-modifier-form-field-highlighted)";
-            keyCell.style.backgroundColor = "var(--background-modifier-accent)";
+            input.addClass("habsiad-input-placeholder");
+            keyCell.addClass("habsiad-highlighted-cell");
             await setKeyDisabled(plugin, key, true);
           } else {
             // Unlock the input field and save state
             input.value = "";
             input.disabled = false;
-            input.style.fontStyle = "";
-            input.style.color = "";
-            input.style.backgroundColor = "";
-            keyCell.style.backgroundColor = "";
+            input.removeClass("habsiad-input-placeholder");
+            keyCell.removeClass("habsiad-highlighted-cell");
             await setKeyDisabled(plugin, key, false);
           }
         });

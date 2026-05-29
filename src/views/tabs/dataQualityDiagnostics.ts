@@ -76,10 +76,7 @@ export class DataQualityDiagnosticsView {
       const dateLink = document.createElement("a");
       dateLink.textContent = file.basename.replace(".md", "");
       dateLink.href = "#";
-      dateLink.style.textDecoration = "none";
-      dateLink.style.color = "inherit";
-      dateLink.style.cursor = "pointer";
-      dateLink.classList.add("date-link");
+      dateLink.classList.add("date-link", "habsiad-link");
       dateLink.onclick = (e) => {
         e.preventDefault();
         this.app.workspace.openLinkText(file.path, "", true);
@@ -94,9 +91,7 @@ export class DataQualityDiagnosticsView {
         starLink.textContent = "⭐";
         starLink.href = "#";
         starLink.title = h5Text;
-        starLink.style.textDecoration = "none";
-        starLink.style.cursor = "pointer";
-        starLink.classList.add("star-link");
+        starLink.classList.add("star-link", "habsiad-link");
         starLink.onclick = (e) => {
           e.preventDefault();
           this.app.workspace.openLinkText(file.path, "", true);
@@ -162,7 +157,21 @@ export class DataQualityDiagnosticsView {
           goalsTooltip = `${completedTasks} completed tasks`;
         }
 
-        workSummaryCell.innerHTML = `${summaryIndicator}, ${goalsIndicator}`;
+        // Use DOM API instead of innerHTML for security
+        workSummaryCell.empty();
+        if (summaryIndicator.includes("<b>")) {
+          const summaryBold = workSummaryCell.createEl("b");
+          summaryBold.textContent = summaryIndicator.replace(/<\/?b>/g, "");
+        } else {
+          workSummaryCell.appendText(summaryIndicator);
+        }
+        workSummaryCell.appendText(", ");
+        if (goalsIndicator.includes("<b>")) {
+          const goalsBold = workSummaryCell.createEl("b");
+          goalsBold.textContent = goalsIndicator.replace(/<\/?b>/g, "");
+        } else {
+          workSummaryCell.appendText(goalsIndicator);
+        }
         workSummaryCell.title = `${summaryTooltip}, ${goalsTooltip}`;
       }
 
@@ -206,8 +215,7 @@ export class DataQualityDiagnosticsView {
       const displayEmoji = mealEmojis[Math.min(mealCount, 4)];
       const emojiSpan = document.createElement("span");
       emojiSpan.textContent = displayEmoji;
-      emojiSpan.style.cursor = "pointer";
-      emojiSpan.classList.add("emoji-indicator");
+      emojiSpan.classList.add("emoji-indicator", "habsiad-clickable");
       emojiSpan.title = `Total calories: ${totalCalories}`;
       foodCell.appendChild(emojiSpan);
 
@@ -241,7 +249,10 @@ export class DataQualityDiagnosticsView {
             /^- \[[xX]\]/.test(line)
           );
           const count = checkedTasks.length;
-          fCell.innerHTML = `<b>${count}</b>`;
+          // Use DOM API instead of innerHTML for security
+          fCell.empty();
+          const countBold = fCell.createEl("b");
+          countBold.textContent = count.toString();
           fCell.title = `Amount of TODO-tasks cleared: ${count}`;
         }
       }
@@ -279,7 +290,10 @@ export class DataQualityDiagnosticsView {
         gCell.textContent = "❌";
         gCell.title = "no Reflections found";
       } else {
-        gCell.innerHTML = `<b>${bulletLines.length}</b>`;
+        // Use DOM API instead of innerHTML for security
+        gCell.empty();
+        const countBold = gCell.createEl("b");
+        countBold.textContent = bulletLines.length.toString();
         gCell.title = `Amount of reflections: ${bulletLines.length}`;
       }
 
@@ -309,7 +323,10 @@ export class DataQualityDiagnosticsView {
           const dailiesText = dailiesMatch[1];
           const dailyLines =
             dailiesText.match(/^\* (?!Habit clicked:)/gm) || [];
-          hColCell.innerHTML = `<b>${habitLines.length}, ${dailyLines.length}</b>`;
+          // Use DOM API instead of innerHTML for security
+          hColCell.empty();
+          const countBold = hColCell.createEl("b");
+          countBold.textContent = `${habitLines.length}, ${dailyLines.length}`;
           hColCell.title = `Habits: ${habitLines.length}, Dailies: ${dailyLines.length}`;
         }
       }
