@@ -158,7 +158,7 @@ export class RetroTaggerModal extends Modal {
 
   // Load Habitica keys from the glossary
   private async loadHabiticaKeys(): Promise<string[]> {
-    const pluginFolder = `${this.plugin.app.vault.configDir}/plugins/habsiad`;
+    const pluginFolder = this.plugin.getPluginDir();
     const glossaryFileName = "frontmatterGlossary.json";
     const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
 
@@ -510,11 +510,13 @@ export class RetroTaggerModal extends Modal {
       }
       
       .retrotagger-item {
-        padding: 8px 12px;
+        padding: 10px 14px;
+        min-height: 40px;
         border-radius: 4px;
         background-color: var(--background-secondary);
         border: none;
         cursor: pointer;
+        font-size: 14px;
       }
       
       .retrotagger-item-achievement {
@@ -542,11 +544,13 @@ export class RetroTaggerModal extends Modal {
       
       .retrotagger-render-button,
       .retrotagger-cancel-button {
-        padding: 8px 16px;
+        padding: 10px 18px;
+        min-height: 40px;
         border-radius: 4px;
         border: none;
         cursor: pointer;
         margin-right: 8px;
+        margin-top: 8px;
       }
       
       .retrotagger-render-button {

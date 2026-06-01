@@ -12,7 +12,7 @@ export class SettingsSync {
 
   constructor(plugin: HabsiadPlugin) {
     this.plugin = plugin;
-    this.syncFilePath = `${plugin.app.vault.configDir}/plugins/habsiad/habsiad-settings.json`;
+    this.syncFilePath = `${plugin.getPluginDir()}/habsiad-settings.json`;
   }
 
   /**

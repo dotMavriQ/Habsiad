@@ -38,6 +38,10 @@ export default class HabsiadPlugin extends Plugin {
   async onload() {
     // Plugin loading is now handled by Obsidian's internal logging
 
+    // Move any data files left in a legacy lowercase "habsiad" folder into the
+    // real plugin directory. Must run before settings/glossary are read.
+    await this.migrateLegacyDataFiles();
+
     // Initialize settings sync
     this.settingsSync = new SettingsSync(this);
 
@@ -164,6 +168,49 @@ export default class HabsiadPlugin extends Plugin {
   onunload() {
     // Plugin unloading is now handled by Obsidian's internal logging
     // Note: Not detaching leaves as per Obsidian guidelines - leaves should persist
+  }
+
+  /**
+   * The plugin's actual on-disk directory (e.g. ".obsidian/plugins/Habsiad").
+   * All plugin data files (glossary, settings sync) live here. Using this
+   * instead of a hardcoded folder name keeps data with the plugin regardless of
+   * how the folder is named/cased, which is what makes it work on mobile and
+   * across install methods.
+   */
+  getPluginDir(): string {
+    return (
+      this.manifest.dir ??
+      `${this.app.vault.configDir}/plugins/${this.manifest.id}`
+    );
+  }
+
+  /**
+   * One-time, non-destructive migration: if a data file still lives in the old
+   * lowercase "habsiad" folder (a historical split from the real plugin dir),
+   * copy it into the real plugin directory so the rest of the plugin can find
+   * it. Idempotent; leaves the legacy copy untouched.
+   */
+  private async migrateLegacyDataFiles() {
+    const adapter = this.app.vault.adapter;
+    const pluginDir = this.getPluginDir();
+    const legacyDir = `${this.app.vault.configDir}/plugins/habsiad`;
+    if (pluginDir === legacyDir) return; // already aligned
+
+    for (const name of ["frontmatterGlossary.json", "habsiad-settings.json"]) {
+      const newPath = `${pluginDir}/${name}`;
+      const legacyPath = `${legacyDir}/${name}`;
+      try {
+        if (
+          !(await adapter.exists(newPath)) &&
+          (await adapter.exists(legacyPath))
+        ) {
+          await adapter.write(newPath, await adapter.read(legacyPath));
+          console.log(`Habsiad: migrated ${name} into ${pluginDir}`);
+        }
+      } catch (error) {
+        console.warn(`Habsiad: could not migrate ${name}`, error);
+      }
+    }
   }
 
   async activateSidebar() {
@@ -371,7 +418,7 @@ export default class HabsiadPlugin extends Plugin {
     }
 
     // Get the frontmatter glossary mapping
-    const pluginFolder = `${this.app.vault.configDir}/plugins/habsiad`;
+    const pluginFolder = this.getPluginDir();
     const glossaryFileName = "frontmatterGlossary.json";
     const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
 

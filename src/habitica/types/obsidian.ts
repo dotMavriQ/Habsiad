@@ -43,6 +43,7 @@ export interface IHabsiadPlugin {
   habiticaService: HabiticaService;
   settingsSync: SettingsSync;
   frontmatterCommands: FrontmatterCommands;
+  getPluginDir(): string;
 }
 
 // File processing result

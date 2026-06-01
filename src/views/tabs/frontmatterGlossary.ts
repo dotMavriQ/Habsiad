@@ -57,7 +57,7 @@ function getNodeFs(): any {
  * Handles migration from old string-based format to new object format.
  */
 async function loadGlossaryMapping(plugin: HabsiadPlugin): Promise<void> {
-  const pluginFolder = `${plugin.app.vault.configDir}/plugins/habsiad`;
+  const pluginFolder = plugin.getPluginDir();
   const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
   try {
     const data = await plugin.app.vault.adapter.read(glossaryPath);
@@ -99,7 +99,7 @@ async function loadGlossaryMapping(plugin: HabsiadPlugin): Promise<void> {
  * Saves the current glossary mapping to frontmatterGlossary.json with 4-space indentation.
  */
 async function saveGlossaryMapping(plugin: HabsiadPlugin): Promise<void> {
-  const pluginFolder = `${plugin.app.vault.configDir}/plugins/habsiad`;
+  const pluginFolder = plugin.getPluginDir();
   const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
   const json = JSON.stringify(glossaryMapping, null, 4);
   await plugin.app.vault.adapter.write(glossaryPath, json);
