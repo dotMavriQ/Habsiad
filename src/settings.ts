@@ -29,6 +29,7 @@ export interface HabsiadSettings {
     weight: boolean;
     calories: boolean;
     alcohol: boolean;
+    mood: boolean;
   };
 }
 
@@ -51,6 +52,7 @@ export const DEFAULT_SETTINGS: HabsiadSettings = {
     weight: true,
     calories: true,
     alcohol: true,
+    mood: true,
   },
 };
 
@@ -286,6 +288,21 @@ export class HabsiadSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.showTabs.alcohol)
           .onChange(async (value) => {
             this.plugin.settings.showTabs.alcohol = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    // Mood Index Tab Toggle
+    new Setting(containerEl)
+      .setName("Show Mood Index Tab")
+      .setDesc(
+        "Enable or disable the Mood Index tab (emoji mood graph) in the sidebar."
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.showTabs.mood)
+          .onChange(async (value) => {
+            this.plugin.settings.showTabs.mood = value;
             await this.plugin.saveSettings();
           })
       );

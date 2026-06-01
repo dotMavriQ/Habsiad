@@ -184,6 +184,12 @@ export default class HabsiadPlugin extends Plugin {
       this.settings.showTabs.alcohol = true;
       await this.saveSettings();
     }
+
+    // Migration: Ensure mood tab is enabled by default if it doesn't exist
+    if (this.settings.showTabs && this.settings.showTabs.mood === undefined) {
+      this.settings.showTabs.mood = true;
+      await this.saveSettings();
+    }
   }
 
   async saveSettings() {

@@ -948,4 +948,45 @@ button,
   background-color: var(--background-primary);
 }
 
+/* --- Mood Index tab --- */
+.habsiad-mood-graph {
+  width: 100%;
+  margin: 10px 0 6px;
+}
+
+.habsiad-mood-svg {
+  display: block;
+  width: 100%;
+  background-color: var(--background-secondary);
+  border-radius: 6px;
+}
+
+.habsiad-mood-emoji {
+  cursor: default;
+}
+
+.habsiad-mood-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.habsiad-mood-table th,
+.habsiad-mood-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.habsiad-mood-table th {
+  background-color: var(--background-secondary);
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.habsiad-mood-emojis {
+  font-size: 18px;
+  letter-spacing: 2px;
+}
+
 

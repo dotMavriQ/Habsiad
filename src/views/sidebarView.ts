@@ -6,11 +6,13 @@ import { DataQualityDiagnosticsView } from "./tabs/dataQualityDiagnostics";
 import { AlcoholTab } from "./tabs/alcoholTab";
 import { LabelsTab } from "./tabs/labelsTab";
 import { LogsTab } from "./tabs/logsTab";
+import { MoodTab } from "./tabs/moodTab";
 
 export const VIEW_TYPE_SIDEBAR = "habsiad-sidebar-view";
 
 export class SidebarView extends ItemView {
   private plugin: HabsiadPlugin;
+  private currentMoodTab?: MoodTab;
 
   constructor(leaf: WorkspaceLeaf, plugin: HabsiadPlugin) {
     super(leaf);
@@ -69,6 +71,13 @@ export class SidebarView extends ItemView {
         optional: true,
         settingKey: "alcohol",
       },
+      {
+        emoji: "🎭",
+        view: "mood",
+        label: "Mood Index",
+        optional: true,
+        settingKey: "mood",
+      },
     ];
 
     // Filter tabs based on settings
@@ -115,6 +124,9 @@ export class SidebarView extends ItemView {
       ".habsiad-content-area"
     ) as HTMLElement;
     if (contentArea) {
+      // Tear down the previous Mood tab's resize observer before clearing.
+      this.currentMoodTab?.dispose();
+      this.currentMoodTab = undefined;
       contentArea.empty();
       this.displayContent(contentArea, view);
     }
@@ -142,6 +154,9 @@ export class SidebarView extends ItemView {
         break;
       case "alcohol":
         this.displayAlcoholTab(container);
+        break;
+      case "mood":
+        this.displayMoodTab(container);
         break;
       case "labels":
         this.displayLabelsTab(container);
@@ -377,6 +392,12 @@ export class SidebarView extends ItemView {
   private async displayAlcoholTab(container: HTMLElement) {
     const alcoholTab = new AlcoholTab(this.app, this.plugin);
     await alcoholTab.render(container);
+  }
+
+  private async displayMoodTab(container: HTMLElement) {
+    const moodTab = new MoodTab(this.app, this.plugin);
+    this.currentMoodTab = moodTab;
+    await moodTab.render(container);
   }
 
   private async displayLabelsTab(container: HTMLElement) {
