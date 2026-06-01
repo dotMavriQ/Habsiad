@@ -1,28 +1,15 @@
-import { App, Modal, Notice, PluginSettingTab, Setting, Modifier } from "obsidian";
+import { App, Modal, Notice, PluginSettingTab, Setting } from "obsidian";
 import HabsiadPlugin from "./main";
 import {
   applyGlossaryJson,
   getGlossaryJson,
 } from "./views/tabs/frontmatterGlossary";
 
-export interface KeyboardShortcut {
-  modifiers: Modifier[];
-  key: string;
-}
-
 export interface HabsiadSettings {
   habiticaUserId: string;
   habiticaApiToken: string;
   journalFolderName: string;
   customFrontmatter: { [key: string]: string };
-  shortcuts: {
-    generateHabitsAndDailies: KeyboardShortcut;
-    replaceWeekday: KeyboardShortcut;
-    syncTodo: KeyboardShortcut;
-    syncHabiticaToFrontmatter: KeyboardShortcut;
-    calculateCalorieTotals: KeyboardShortcut;
-    openRetrotagger: KeyboardShortcut;
-  };
   // Tab visibility options
   showTabs: {
     steps: boolean;
@@ -38,14 +25,6 @@ export const DEFAULT_SETTINGS: HabsiadSettings = {
   habiticaApiToken: "",
   journalFolderName: "Journal",
   customFrontmatter: {},
-  shortcuts: {
-    generateHabitsAndDailies: { modifiers: ["Mod", "Shift"], key: "H" },
-    replaceWeekday: { modifiers: ["Mod", "Shift"], key: "D" },
-    syncTodo: { modifiers: ["Mod", "Shift"], key: "Y" },
-    syncHabiticaToFrontmatter: { modifiers: ["Mod", "Shift"], key: "Q" },
-    calculateCalorieTotals: { modifiers: ["Mod", "Shift"], key: "C" },
-    openRetrotagger: { modifiers: ["Mod", "Shift"], key: "'" },
-  },
   // All tabs visible by default
   showTabs: {
     steps: true,
@@ -112,126 +91,15 @@ export class HabsiadSettingTab extends PluginSettingTab {
           })
       );
 
-    // Add a section for keyboard shortcuts
+    // Keyboard shortcuts note. Every Habsiad command is registered with
+    // Obsidian, so hotkeys are assigned through Obsidian's own Hotkeys pane
+    // (Settings → Hotkeys, search "Habsiad"). All commands are also available
+    // in the Command Palette, including on mobile.
     containerEl.createEl("h3", { text: "Keyboard Shortcuts" });
-
-    // Helper function to create a shortcut setting
-    const createShortcutSetting = (
-      id: keyof HabsiadSettings["shortcuts"],
-      name: string,
-      desc: string
-    ) => {
-      const setting = new Setting(containerEl).setName(name).setDesc(desc);
-
-      // Add dropdown for modifier keys
-      setting.addDropdown((dropdown) => {
-        const options = {
-          none: "None",
-          Mod: "Ctrl/Cmd",
-          "Mod+Shift": "Ctrl/Cmd+Shift",
-          "Mod+Alt": "Ctrl/Cmd+Alt",
-          Alt: "Alt",
-          "Alt+Shift": "Alt+Shift",
-        };
-
-        const currentModifiers = this.plugin.settings.shortcuts[id].modifiers;
-        let currentValue = "none";
-        if (
-          currentModifiers.includes("Mod") &&
-          currentModifiers.includes("Shift")
-        ) {
-          currentValue = "Mod+Shift";
-        } else if (
-          currentModifiers.includes("Mod") &&
-          currentModifiers.includes("Alt")
-        ) {
-          currentValue = "Mod+Alt";
-        } else if (
-          currentModifiers.includes("Alt") &&
-          currentModifiers.includes("Shift")
-        ) {
-          currentValue = "Alt+Shift";
-        } else if (currentModifiers.includes("Mod")) {
-          currentValue = "Mod";
-        } else if (currentModifiers.includes("Alt")) {
-          currentValue = "Alt";
-        }
-
-        dropdown
-          .addOptions(options)
-          .setValue(currentValue)
-          .onChange(async (value) => {
-            let modifiers: Modifier[] = [];
-            if (value === "Mod+Shift") {
-              modifiers = ["Mod", "Shift"];
-            } else if (value === "Mod+Alt") {
-              modifiers = ["Mod", "Alt"];
-            } else if (value === "Alt+Shift") {
-              modifiers = ["Alt", "Shift"];
-            } else if (
-              value !== "none" &&
-              (value === "Mod" || value === "Alt")
-            ) {
-              modifiers = [value];
-            }
-
-            this.plugin.settings.shortcuts[id].modifiers = modifiers;
-            await this.plugin.saveSettings();
-          });
-      });
-
-      // Add text field for key
-      setting.addText((text) => {
-        text
-          .setPlaceholder("Key")
-          .setValue(this.plugin.settings.shortcuts[id].key)
-          .onChange(async (value) => {
-            if (value) {
-              this.plugin.settings.shortcuts[id].key = value.toUpperCase();
-              await this.plugin.saveSettings();
-            }
-          });
-      });
-
-      return setting;
-    };
-
-    // Create settings for each shortcut
-    createShortcutSetting(
-      "generateHabitsAndDailies",
-      "Generate Habits & Dailies",
-      "Shortcut to insert Habitica habits and dailies into the current note."
-    );
-
-    createShortcutSetting(
-      "replaceWeekday",
-      "Replace {WEEKDAY}",
-      "Shortcut to replace {WEEKDAY} with the actual day of the week."
-    );
-
-    createShortcutSetting(
-      "syncTodo",
-      "Sync Habitica TODO",
-      "Shortcut to sync Habitica TODOs to the current note."
-    );
-
-    createShortcutSetting(
-      "syncHabiticaToFrontmatter",
-      "Sync Habitica to Frontmatter",
-      "Shortcut to sync Habitica data to frontmatter in journal files."
-    );
-
-    createShortcutSetting(
-      "calculateCalorieTotals",
-      "Calculate Calorie Totals",
-      "Shortcut to calculate and update calorie totals in journal files."
-    );
-
-    createShortcutSetting(
-      "openRetrotagger",
-      "Open Retrotagger",
-      "Shortcut to open the Retrotagger tool for adding achievements and dailies to journal entries."
-    );
+    containerEl.createEl("p", {
+      text: 'Assign hotkeys for Habsiad commands in Obsidian\'s Settings → Hotkeys (search "Habsiad"). Every command is also available from the Command Palette, which works on mobile too.',
+      cls: "setting-item-description",
+    });
 
     // Optional Tabs Section
     containerEl.createEl("h3", { text: "Optional Tabs" });
