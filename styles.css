@@ -361,13 +361,16 @@ button,
 .obsitica-diagnostics-table td:first-child a {
   cursor: pointer !important;
   font-weight: 500;
+  /* Reserve the hover padding/radius up-front so hovering only adds a
+     background highlight — otherwise the box grows on hover and the date
+     text wobbles. */
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
 .habsiad-diagnostics-table td:first-child a:hover,
 .obsitica-diagnostics-table td:first-child a:hover {
   background-color: var(--background-modifier-hover);
-  border-radius: 4px;
-  padding: 2px 4px;
 }
 
 /* Tooltip enhancement for hoverable elements */
