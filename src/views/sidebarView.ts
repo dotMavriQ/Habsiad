@@ -543,39 +543,6 @@ export class SidebarView extends ItemView {
       (this.app as any).setting.openTabById("habsiad");
     });
 
-    // Separator
-    infoSection.createEl("hr");
-
-    // Thank you message
-    infoSection.createEl("p", { text: "Thank you for using Habsiad!" });
-
-    // Add some spacing
-    infoSection.createEl("br");
-
-    // Donation message
-    infoSection.createEl("small", {
-      text: "If you benefit from this plugin and feel like contributing to its development, please consider donating:",
-    });
-
-    // Row break
-    infoSection.createEl("br");
-
-    // Donation button container using a clickable image
-    const donationDiv = infoSection.createDiv("habsiad-donation");
-    donationDiv.setAttr("style", "margin-top: 5px;");
-
-    // Create donation link using DOM API instead of innerHTML
-    const donationLink = donationDiv.createEl("a", {
-      attr: {
-        href: "https://liberapay.com/dotMavriQ/donate",
-        target: "_blank",
-      },
-    });
-    donationLink.createEl("img", {
-      attr: {
-        alt: "Donate using Liberapay",
-        src: "https://img.shields.io/liberapay/patrons/dotMavriQ.svg?logo=liberapay",
-      },
-    });
+    // Additional interactions live in settings for now
   }
 }

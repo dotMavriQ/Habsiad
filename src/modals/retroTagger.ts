@@ -158,7 +158,7 @@ export class RetroTaggerModal extends Modal {
 
   // Load Habitica keys from the glossary
   private async loadHabiticaKeys(): Promise<string[]> {
-    const pluginFolder = `${this.plugin.app.vault.configDir}/plugins/Habsiad`;
+    const pluginFolder = `${this.plugin.app.vault.configDir}/plugins/habsiad`;
     const glossaryFileName = "frontmatterGlossary.json";
     const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
 
@@ -204,14 +204,12 @@ export class RetroTaggerModal extends Modal {
 
       if (achievementsMatch) {
         const achievementsSection = achievementsMatch[1];
-        // Look for lines like "* Habit clicked: HABIT_NAME - Positive: 1, Negative: 0"
-        const habitLines = achievementsSection.match(
-          /\* Habit clicked: ([^-]+)/g
-        );
+        // Look for lines like "* HABIT_NAME - Positive: 1, Negative: 0"
+        const habitLines = achievementsSection.match(/\* (.+?) - Positive:/g);
 
         if (habitLines) {
           for (const line of habitLines) {
-            const habitMatch = line.match(/\* Habit clicked: ([^-]+)/);
+            const habitMatch = line.match(/\* (.+?) - Positive:/);
             if (habitMatch) {
               const habitName = habitMatch[1].trim();
               if (this.itemButtons[habitName]) {
@@ -241,7 +239,7 @@ export class RetroTaggerModal extends Modal {
               const dailyName = dailyMatch[1].trim();
               // Skip habit lines that might be in the dailies section
               if (
-                !dailyName.startsWith("Habit clicked:") &&
+                !dailyName.includes(" - Positive:") &&
                 this.itemButtons[dailyName]
               ) {
                 this.selectedItems[dailyName] = "daily";
@@ -359,7 +357,7 @@ export class RetroTaggerModal extends Modal {
               newAchievements
                 .map(
                   (item: string) =>
-                    `* Habit clicked: ${item} - Positive: 1, Negative: 0`
+                    `* ${item} - Positive: 1, Negative: 0`
                 )
                 .join("\n");
             content = content.replace(existingSection, newSection);
@@ -368,10 +366,7 @@ export class RetroTaggerModal extends Modal {
           // Create new Achievements section
           newContent += `\n## Achievements on ${this.journalDate}\n`;
           newContent += newAchievements
-            .map(
-              (item: string) =>
-                `* Habit clicked: ${item} - Positive: 1, Negative: 0`
-            )
+            .map((item: string) => `* ${item} - Positive: 1, Negative: 0`)
             .join("\n");
         }
       }
@@ -449,13 +444,11 @@ export class RetroTaggerModal extends Modal {
 
     if (achievementsMatch) {
       const achievementsSection = achievementsMatch[1];
-      const habitLines = achievementsSection.match(
-        /\* Habit clicked: ([^-]+)/g
-      );
+      const habitLines = achievementsSection.match(/\* (.+?) - Positive:/g);
 
       if (habitLines) {
         for (const line of habitLines) {
-          const habitMatch = line.match(/\* Habit clicked: ([^-]+)/);
+          const habitMatch = line.match(/\* (.+?) - Positive:/);
           if (habitMatch) {
             achievements.push(habitMatch[1].trim());
           }
@@ -482,7 +475,7 @@ export class RetroTaggerModal extends Modal {
           if (dailyMatch) {
             const dailyName = dailyMatch[1].trim();
             // Skip habit lines that might be in the dailies section
-            if (!dailyName.startsWith("Habit clicked:")) {
+            if (!dailyName.includes(" - Positive:")) {
               dailies.push(dailyName);
             }
           }

@@ -1,4 +1,4 @@
-import { TFile, TFolder } from "obsidian";
+import { FileSystemAdapter, Notice, TFile, TFolder } from "obsidian";
 import HabsiadPlugin from "../../main";
 
 interface GlossaryEntry {
@@ -6,8 +6,50 @@ interface GlossaryEntry {
   isDisabled: boolean;
 }
 
-let glossaryMapping: { [key: string]: GlossaryEntry } = {};
+type GlossaryMapping = { [key: string]: GlossaryEntry };
+
+let glossaryMapping: GlossaryMapping = {};
 const glossaryFileName = "frontmatterGlossary.json";
+
+/**
+ * Resolves an Electron/Node module via the desktop runtime's `require`.
+ * Returns null on mobile or when the module is unavailable.
+ */
+function getElectronModule(moduleName: string): any {
+  const electronRequire = (window as any).require;
+  if (typeof electronRequire !== "function") {
+    return null;
+  }
+  try {
+    return electronRequire(moduleName);
+  } catch (error) {
+    console.warn(`Failed to load ${moduleName}:`, error);
+    return null;
+  }
+}
+
+function getElectronDialog(): any {
+  const remote = getElectronModule("@electron/remote");
+  if (remote?.dialog) {
+    return remote.dialog;
+  }
+  const electron = getElectronModule("electron");
+  if (electron?.dialog) {
+    return electron.dialog;
+  }
+  if (electron?.remote?.dialog) {
+    return electron.remote.dialog;
+  }
+  return null;
+}
+
+function getNodeFs(): any {
+  const fsModule = getElectronModule("fs");
+  if (fsModule?.promises) {
+    return fsModule.promises;
+  }
+  return null;
+}
 
 /**
  * Loads the glossary mapping from frontmatterGlossary.json.
@@ -15,7 +57,7 @@ const glossaryFileName = "frontmatterGlossary.json";
  * Handles migration from old string-based format to new object format.
  */
 async function loadGlossaryMapping(plugin: HabsiadPlugin): Promise<void> {
-  const pluginFolder = `${plugin.app.vault.configDir}/plugins/Habsiad`;
+  const pluginFolder = `${plugin.app.vault.configDir}/plugins/habsiad`;
   const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
   try {
     const data = await plugin.app.vault.adapter.read(glossaryPath);
@@ -57,7 +99,7 @@ async function loadGlossaryMapping(plugin: HabsiadPlugin): Promise<void> {
  * Saves the current glossary mapping to frontmatterGlossary.json with 4-space indentation.
  */
 async function saveGlossaryMapping(plugin: HabsiadPlugin): Promise<void> {
-  const pluginFolder = `${plugin.app.vault.configDir}/plugins/Habsiad`;
+  const pluginFolder = `${plugin.app.vault.configDir}/plugins/habsiad`;
   const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
   const json = JSON.stringify(glossaryMapping, null, 4);
   await plugin.app.vault.adapter.write(glossaryPath, json);
@@ -110,6 +152,142 @@ export async function saveHabiticaKey(
   await saveGlossaryMapping(plugin);
 }
 
+function getDefaultDialogPath(
+  plugin: HabsiadPlugin,
+  fileName: string
+): string | undefined {
+  const adapter = plugin.app.vault.adapter;
+  if (adapter instanceof FileSystemAdapter) {
+    const pathModule = (window as any).require?.("path");
+    if (pathModule) {
+      return pathModule.join(adapter.getBasePath(), fileName);
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Validates and normalizes arbitrary parsed JSON into the glossary mapping
+ * shape, migrating legacy string values to { habiticaKey, isDisabled }.
+ */
+function normalizeGlossaryData(data: unknown): GlossaryMapping {
+  if (!data || typeof data !== "object") {
+    throw new Error("Glossary data must be a JSON object");
+  }
+  const normalized: GlossaryMapping = {};
+  for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+    if (typeof value === "string") {
+      normalized[key] = { habiticaKey: value, isDisabled: false };
+      continue;
+    }
+    if (value && typeof value === "object") {
+      const entry = value as Partial<GlossaryEntry>;
+      const habiticaKey =
+        typeof entry.habiticaKey === "string" ? entry.habiticaKey : "";
+      const isDisabled =
+        typeof entry.isDisabled === "boolean" ? entry.isDisabled : false;
+      normalized[key] = { habiticaKey, isDisabled };
+      continue;
+    }
+    throw new Error(
+      `Invalid glossary entry for key "${key}". Expected string or object.`
+    );
+  }
+  return normalized;
+}
+
+/**
+ * Returns the current glossary as a pretty-printed JSON string.
+ */
+export async function getGlossaryJson(plugin: HabsiadPlugin): Promise<string> {
+  await loadGlossaryMapping(plugin);
+  return JSON.stringify(glossaryMapping, null, 4);
+}
+
+/**
+ * Replaces the glossary with the supplied JSON string and persists it.
+ */
+export async function applyGlossaryJson(
+  plugin: HabsiadPlugin,
+  json: string
+): Promise<void> {
+  const parsed = JSON.parse(json);
+  const normalized = normalizeGlossaryData(parsed);
+  glossaryMapping = normalized;
+  await saveGlossaryMapping(plugin);
+}
+
+async function exportGlossary(plugin: HabsiadPlugin): Promise<void> {
+  try {
+    const dialog = getElectronDialog();
+    const fs = getNodeFs();
+    if (!dialog || !fs) {
+      new Notice("Export is available only on the desktop app.");
+      return;
+    }
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:T]/g, "-")
+      .split(".")[0];
+    const defaultPath = getDefaultDialogPath(
+      plugin,
+      `frontmatterGlossary-${timestamp}.json`
+    );
+    const result = await dialog.showSaveDialog({
+      title: "Export Habsiad Frontmatter Glossary",
+      defaultPath,
+      filters: [{ name: "JSON", extensions: ["json"] }],
+    });
+    if (result.canceled || !result.filePath) {
+      new Notice("Glossary export cancelled.");
+      return;
+    }
+    await loadGlossaryMapping(plugin);
+    const output = JSON.stringify(glossaryMapping, null, 4);
+    await fs.writeFile(result.filePath, output, "utf8");
+    new Notice("Glossary exported successfully.");
+    console.log("Glossary exported to", result.filePath);
+  } catch (error) {
+    console.error("Failed to export glossary:", error);
+    new Notice("Failed to export glossary. See console for details.");
+  }
+}
+
+async function importGlossary(plugin: HabsiadPlugin): Promise<boolean> {
+  try {
+    const dialog = getElectronDialog();
+    const fs = getNodeFs();
+    if (!dialog || !fs) {
+      new Notice("Import is available only on the desktop app.");
+      return false;
+    }
+    const defaultPath = getDefaultDialogPath(plugin, "frontmatterGlossary.json");
+    const result = await dialog.showOpenDialog({
+      title: "Import Habsiad Frontmatter Glossary",
+      defaultPath,
+      filters: [{ name: "JSON", extensions: ["json"] }],
+      properties: ["openFile"],
+    });
+    const filePath = result.filePaths?.[0];
+    if (result.canceled || !filePath) {
+      new Notice("Glossary import cancelled.");
+      return false;
+    }
+    const fileContents = await fs.readFile(filePath, "utf8");
+    const parsed = JSON.parse(fileContents);
+    const normalized = normalizeGlossaryData(parsed);
+    glossaryMapping = normalized;
+    await saveGlossaryMapping(plugin);
+    new Notice("Glossary imported successfully.");
+    console.log("Glossary imported from", filePath);
+    return true;
+  } catch (error) {
+    console.error("Failed to import glossary:", error);
+    new Notice("Failed to import glossary. See console for details.");
+    return false;
+  }
+}
+
 function getAllFrontmatterKeys(plugin: HabsiadPlugin): string[] {
   const journalFolderName = plugin.settings.journalFolderName || "Journal";
   const journalFolder =
@@ -157,15 +335,33 @@ export async function displayGlossaryTable(
     container.removeChild(container.firstChild);
   }
 
-  // Add the sync button at the top
-  const syncButton = container.createEl("button", {
+  // Action buttons container
+  const actionBar = container.createDiv({ cls: "habsiad-glossary-actions" });
+  const syncButton = actionBar.createEl("button", {
     text: "Sync Habitica to Frontmatter",
     cls: "habsiad-sync-button",
   });
-  syncButton.setAttr("style", "margin-bottom: 15px;");
-
   syncButton.addEventListener("click", () => {
     plugin.syncHabiticaToFrontmatter();
+  });
+
+  const exportButton = actionBar.createEl("button", {
+    text: "Export Glossary",
+    cls: "habsiad-export-button",
+  });
+  exportButton.addEventListener("click", async () => {
+    await exportGlossary(plugin);
+  });
+
+  const importButton = actionBar.createEl("button", {
+    text: "Import Glossary",
+    cls: "habsiad-import-button",
+  });
+  importButton.addEventListener("click", async () => {
+    const didImport = await importGlossary(plugin);
+    if (didImport) {
+      await displayGlossaryTable(container, plugin);
+    }
   });
 
   const table = container.createEl("table", {

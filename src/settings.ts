@@ -1,5 +1,9 @@
-import { App, PluginSettingTab, Setting, Modifier } from "obsidian";
+import { App, Modal, Notice, PluginSettingTab, Setting, Modifier } from "obsidian";
 import HabsiadPlugin from "./main";
+import {
+  applyGlossaryJson,
+  getGlossaryJson,
+} from "./views/tabs/frontmatterGlossary";
 
 export interface KeyboardShortcut {
   modifiers: Modifier[];
@@ -286,74 +290,226 @@ export class HabsiadSettingTab extends PluginSettingTab {
           })
       );
 
-    // Settings Sync Section
-    containerEl.createEl("h3", { text: "Settings Synchronization" });
+    // Glossary Transfer Section
+    containerEl.createEl("h3", { text: "Frontmatter Glossary Transfer" });
     containerEl.createEl("p", {
-      text: "Sync your settings across devices through your Obsidian vault. Settings are automatically backed up to a sync file when changed.",
+      text: "Copy or paste the Habsiad frontmatter glossary as JSON to share across devices.",
       cls: "setting-item-description",
     });
 
-    // Sync Status Display
-    const syncStatusDiv = containerEl.createDiv({
-      cls: "setting-item-description",
-    });
-    this.updateSyncStatus(syncStatusDiv);
-
-    // Manual sync controls
     new Setting(containerEl)
-      .setName("Export Settings to Sync File")
+      .setName("Copy Glossary JSON")
       .setDesc(
-        "Manually save current settings to sync file for cross-device synchronization."
+        "Copies the current frontmatterGlossary.json to your clipboard in JSON format."
       )
       .addButton((button) =>
         button
-          .setButtonText("Export Now")
+          .setButtonText("Copy JSON")
           .setCta()
           .onClick(async () => {
-            const success = await (
-              this.plugin as any
-            ).settingsSync.exportToSyncFile();
-            if (success) {
-              this.updateSyncStatus(syncStatusDiv);
-            }
+            await this.handleCopyGlossary();
           })
       );
 
     new Setting(containerEl)
-      .setName("Import Settings from Sync File")
+      .setName("Paste Glossary JSON")
       .setDesc(
-        "Restore settings from sync file. This will overwrite current settings."
+        "Replaces the current glossary with JSON from your clipboard or manual paste."
       )
       .addButton((button) =>
         button
-          .setButtonText("Import Now")
+          .setButtonText("Paste JSON")
           .setWarning()
           .onClick(async () => {
-            const success = await (
-              this.plugin as any
-            ).settingsSync.importFromSyncFile();
-            if (success) {
-              this.display(); // Refresh the settings display
-            }
+            await this.handlePasteGlossary();
           })
       );
   }
 
-  private async updateSyncStatus(statusDiv: HTMLElement) {
-    statusDiv.empty();
-    const settingsSync = (this.plugin as any).settingsSync;
-    const syncFileExists = await settingsSync.syncFileExists();
-
-    if (syncFileExists) {
-      statusDiv.createEl("span", {
-        text: "✅ Sync file exists - settings will sync across devices",
-        cls: "mod-success",
-      });
-    } else {
-      statusDiv.createEl("span", {
-        text: "⚠️ No sync file found - click 'Export Now' to create one",
-        cls: "mod-warning",
-      });
+  private async handleCopyGlossary(): Promise<void> {
+    try {
+      const json = await getGlossaryJson(this.plugin);
+      const copied = await copyTextToClipboard(json);
+      if (copied) {
+        new Notice("Glossary JSON copied to clipboard.");
+      } else {
+        new GlossaryCopyModal(this.app, json).open();
+      }
+    } catch (error) {
+      console.error("Failed to copy glossary JSON:", error);
+      new Notice("Failed to copy glossary JSON. See console for details.");
     }
+  }
+
+  private async handlePasteGlossary(): Promise<void> {
+    try {
+      const clipboardValue = await readTextFromClipboard();
+      if (clipboardValue) {
+        await applyGlossaryJson(this.plugin, clipboardValue);
+        new Notice("Glossary imported from clipboard.");
+        return;
+      }
+    } catch (error) {
+      console.warn(
+        "Clipboard import failed, falling back to manual paste.",
+        error
+      );
+    }
+    new GlossaryPasteModal(this.app, async (json) => {
+      await applyGlossaryJson(this.plugin, json);
+      new Notice("Glossary imported successfully.");
+    }).open();
+  }
+}
+
+async function copyTextToClipboard(text: string): Promise<boolean> {
+  if (navigator?.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (error) {
+      console.warn("Navigator clipboard write failed:", error);
+    }
+  }
+  const clipboard = getElectronClipboard();
+  if (clipboard) {
+    clipboard.writeText(text);
+    return true;
+  }
+  return false;
+}
+
+async function readTextFromClipboard(): Promise<string | null> {
+  if (navigator?.clipboard?.readText) {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        return text;
+      }
+    } catch (error) {
+      console.warn("Navigator clipboard read failed:", error);
+    }
+  }
+  const clipboard = getElectronClipboard();
+  if (clipboard) {
+    const text = clipboard.readText();
+    return text || null;
+  }
+  return null;
+}
+
+function getElectronClipboard(): any {
+  const electronRequire = (window as any).require;
+  if (typeof electronRequire !== "function") {
+    return null;
+  }
+  try {
+    const remote = electronRequire("@electron/remote");
+    if (remote?.clipboard) {
+      return remote.clipboard;
+    }
+  } catch (error) {
+    console.warn("Failed to load @electron/remote clipboard:", error);
+  }
+  try {
+    const electron = electronRequire("electron");
+    if (electron?.clipboard) {
+      return electron.clipboard;
+    }
+    if (electron?.remote?.clipboard) {
+      return electron.remote.clipboard;
+    }
+  } catch (error) {
+    console.warn("Failed to load electron clipboard:", error);
+  }
+  return null;
+}
+
+class GlossaryCopyModal extends Modal {
+  private json: string;
+
+  constructor(app: App, json: string) {
+    super(app);
+    this.json = json;
+  }
+
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h2", { text: "Copy Glossary JSON" });
+    contentEl.createEl("p", {
+      text: "Clipboard access is restricted. Copy the JSON below manually.",
+      cls: "setting-item-description",
+    });
+    const textArea = contentEl.createEl("textarea", {
+      cls: "habsiad-glossary-json-area",
+      text: this.json,
+    });
+    textArea.rows = 18;
+    textArea.select();
+    const buttonBar = contentEl.createDiv({ cls: "habsiad-modal-actions" });
+    const copyButton = buttonBar.createEl("button", {
+      text: "Copy to Clipboard",
+      cls: "mod-cta",
+    });
+    copyButton.addEventListener("click", async () => {
+      const copied = await copyTextToClipboard(this.json);
+      if (copied) {
+        new Notice("Glossary JSON copied to clipboard.");
+      } else {
+        new Notice("Failed to copy to clipboard. Please copy manually.");
+      }
+    });
+    const closeButton = buttonBar.createEl("button", { text: "Close" });
+    closeButton.addEventListener("click", () => this.close());
+  }
+}
+
+class GlossaryPasteModal extends Modal {
+  private onSubmit: (json: string) => Promise<void>;
+
+  constructor(app: App, onSubmit: (json: string) => Promise<void>) {
+    super(app);
+    this.onSubmit = onSubmit;
+  }
+
+  async onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h2", { text: "Paste Glossary JSON" });
+    contentEl.createEl("p", {
+      text: "Paste your glossary JSON below and click Import to replace the current glossary.",
+      cls: "setting-item-description",
+    });
+    const textArea = contentEl.createEl("textarea", {
+      cls: "habsiad-glossary-json-area",
+    });
+    textArea.rows = 18;
+    // Attempt to pre-fill from clipboard when available
+    const clipboardValue = await readTextFromClipboard();
+    if (clipboardValue) {
+      textArea.value = clipboardValue;
+    }
+    const buttonBar = contentEl.createDiv({ cls: "habsiad-modal-actions" });
+    const importButton = buttonBar.createEl("button", {
+      text: "Import",
+      cls: "mod-warning",
+    });
+    importButton.addEventListener("click", async () => {
+      const value = textArea.value.trim();
+      if (!value) {
+        new Notice("Please paste glossary JSON before importing.");
+        return;
+      }
+      try {
+        await this.onSubmit(value);
+        this.close();
+      } catch (error) {
+        console.error("Failed to import glossary JSON:", error);
+        new Notice("Invalid glossary JSON. See console for details.");
+      }
+    });
+    const cancelButton = buttonBar.createEl("button", { text: "Cancel" });
+    cancelButton.addEventListener("click", () => this.close());
   }
 }

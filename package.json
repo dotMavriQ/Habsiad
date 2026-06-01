@@ -1,7 +1,7 @@
 {
   "name": "habsiad",
-  "version": "1.6.0",
-  "description": "An Obsidian plugin that integrates Habitica data into your daily journal.",
+  "version": "2.1.2",
+  "description": "Habitica integration for Obsidian with enhanced modular architecture",
   "author": "dotMavriQ",
   "authorUrl": "https://github.com/dotMavriQ",
   "main": "src/main.ts",

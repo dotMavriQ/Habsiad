@@ -73,7 +73,7 @@ export class HabiticaSyncCommand {
         )
         .map(
           (task) =>
-            `* Habit clicked: ${task.text} - Positive: ${task.counterUp}, Negative: ${task.counterDown}`
+            `* ${task.text} - Positive: ${task.counterUp}, Negative: ${task.counterDown}`
         )
         .join("\n");
 

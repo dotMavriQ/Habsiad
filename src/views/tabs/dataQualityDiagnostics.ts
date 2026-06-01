@@ -110,23 +110,34 @@ export class DataQualityDiagnosticsView {
 
       if (isWeekend && hasWorkHeader) {
         workCell.textContent = "❌";
+        workCell.classList.add("emoji-indicator", "habsiad-clickable");
         workCell.title = "Work logged on a weekend";
       } else if (hasWorkHeader) {
         workCell.textContent = "🔨";
+        workCell.classList.add("emoji-indicator", "habsiad-clickable");
         workCell.title = "Workday";
       } else if (h5Text) {
         workCell.textContent = "😃";
+        workCell.classList.add("emoji-indicator", "habsiad-clickable");
         workCell.title = "Vacation or holiday";
-      } else {
+      } else if (isWeekend) {
         workCell.textContent = "😌";
+        workCell.classList.add("emoji-indicator", "habsiad-clickable");
         workCell.title = "Weekend";
+      } else {
+        workCell.textContent = "🏠";
+        workCell.classList.add("emoji-indicator", "habsiad-clickable");
+        workCell.title = "Personal / Home day";
       }
 
       // Column D: Work Summary & Completed Tasks
       const workSummaryCell = row.insertCell();
       if (!hasWorkHeader) {
-        workSummaryCell.textContent = "😌";
-        workSummaryCell.title = "No work logged";
+        const emojiSpan = workSummaryCell.createEl("span", {
+          cls: "emoji-indicator",
+        });
+        emojiSpan.textContent = isWeekend ? "😌" : "🏠";
+        workSummaryCell.title = isWeekend ? "Weekend" : "Personal / Home day";
       } else {
         const summaryMatch = fileContent.match(
           /###### Summary:\n([\s\S]*?)\n### Goals for Today:/
@@ -163,14 +174,20 @@ export class DataQualityDiagnosticsView {
           const summaryBold = workSummaryCell.createEl("b");
           summaryBold.textContent = summaryIndicator.replace(/<\/?b>/g, "");
         } else {
-          workSummaryCell.appendText(summaryIndicator);
+          const emojiSpan = workSummaryCell.createEl("span", {
+            cls: "emoji-indicator",
+          });
+          emojiSpan.textContent = summaryIndicator;
         }
         workSummaryCell.appendText(", ");
         if (goalsIndicator.includes("<b>")) {
           const goalsBold = workSummaryCell.createEl("b");
           goalsBold.textContent = goalsIndicator.replace(/<\/?b>/g, "");
         } else {
-          workSummaryCell.appendText(goalsIndicator);
+          const emojiSpan = workSummaryCell.createEl("span", {
+            cls: "emoji-indicator",
+          });
+          emojiSpan.textContent = goalsIndicator;
         }
         workSummaryCell.title = `${summaryTooltip}, ${goalsTooltip}`;
       }
@@ -233,7 +250,8 @@ export class DataQualityDiagnosticsView {
         templateTasks.every((task, i) => todoLines[i] === task);
       const isEmpty = todoLines.length === 0;
       if (isEmpty || isTemplate) {
-        fCell.textContent = "❌";
+        const emojiSpan = fCell.createEl("span", { cls: "emoji-indicator" });
+        emojiSpan.textContent = "❌";
         fCell.title = "No updates: Only template tasks or empty TODO section.";
       } else {
         const uncheckedTasks = todoLines.filter((line) =>
@@ -242,7 +260,8 @@ export class DataQualityDiagnosticsView {
         const journalDate = file.basename.replace(".md", "");
         const currentDate = new Date().toISOString().split("T")[0];
         if (journalDate !== currentDate && uncheckedTasks.length > 0) {
-          fCell.textContent = "❗";
+          const emojiSpan = fCell.createEl("span", { cls: "emoji-indicator" });
+          emojiSpan.textContent = "❗";
           fCell.title = "Warning: Incomplete tasks from a previous day.";
         } else {
           const checkedTasks = todoLines.filter((line) =>
@@ -287,7 +306,8 @@ export class DataQualityDiagnosticsView {
         bulletLines.length === 0 ||
         (bulletLines.length === 1 && templatePattern.test(bulletLines[0]))
       ) {
-        gCell.textContent = "❌";
+        const emojiSpan = gCell.createEl("span", { cls: "emoji-indicator" });
+        emojiSpan.textContent = "❌";
         gCell.title = "no Reflections found";
       } else {
         // Use DOM API instead of innerHTML for security
@@ -306,23 +326,27 @@ export class DataQualityDiagnosticsView {
       const achievementsMatch = fileContent.match(achievementsRegex);
       const dailiesMatch = fileContent.match(dailiesRegex);
       if (!achievementsMatch || !dailiesMatch) {
-        hColCell.textContent = "❌";
+        const emojiSpan = hColCell.createEl("span", { cls: "emoji-indicator" });
+        emojiSpan.textContent = "❌";
         hColCell.title = "Achievements & Dailies not found";
       } else {
         const achievementsDate = achievementsMatch[1].trim();
         const fileDate = file.basename.replace(".md", "");
         if (achievementsDate !== fileDate) {
-          hColCell.textContent = "❗";
+          const emojiSpan = hColCell.createEl("span", {
+            cls: "emoji-indicator",
+          });
+          emojiSpan.textContent = "❗";
           hColCell.title = "incorrect date set";
         } else {
           // Count habit lines in the Achievements section.
           const achievementsText = achievementsMatch[2];
           const habitLines =
-            achievementsText.match(/^\* Habit clicked:/gm) || [];
+            achievementsText.match(/^\* .+ - Positive: \d+/gm) || [];
           // Count daily lines in Completed Dailies (lines starting with "* " but not habit lines).
           const dailiesText = dailiesMatch[1];
           const dailyLines =
-            dailiesText.match(/^\* (?!Habit clicked:)/gm) || [];
+            dailiesText.match(/^\* (?!.+ - Positive: \d+)/gm) || [];
           // Use DOM API instead of innerHTML for security
           hColCell.empty();
           const countBold = hColCell.createEl("b");

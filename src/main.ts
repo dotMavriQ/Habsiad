@@ -88,6 +88,13 @@ export default class HabsiadPlugin extends Plugin {
       callback: () => this.utilityCommands.syncTodo(),
     });
 
+    // Register the LIFE canvas sync command
+    this.addCommand({
+      id: "sync-life-canvas",
+      name: "Sync LIFE canvas",
+      callback: () => this.syncLifeCanvas(),
+    });
+
     // Register the Habitica to Frontmatter sync command
     this.addCommand({
       id: "sync-habitica-to-frontmatter",
@@ -213,6 +220,126 @@ export default class HabsiadPlugin extends Plugin {
     await this.frontmatterCommands.updateCaloriesFrontmatter(file, newCalories);
   }
 
+  cleanLifeTaskText(line: string): string {
+    return line
+      .replace(/^\s*-\s+\[[xX]\]\s+/, "")
+      .replace(/\s+#\S+/g, "")
+      .replace(/\s+[🔺⏫🔼🔽⏬]\s*/gu, " ")
+      .replace(/\s+✅\s+\d{4}-\d{2}-\d{2}\s*$/, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  findLifeJournalFile(date: string): TFile | null {
+    const journalFolderName = this.settings.journalFolderName || "JOURNAL";
+    const directPath = `${journalFolderName}/${date}.md`;
+    const directFile = this.app.vault.getAbstractFileByPath(directPath);
+    if (directFile instanceof TFile) {
+      return directFile;
+    }
+    const yearPath = `${journalFolderName}/${date.slice(0, 4)}/${date}.md`;
+    const yearFile = this.app.vault.getAbstractFileByPath(yearPath);
+    if (yearFile instanceof TFile) {
+      return yearFile;
+    }
+    return null;
+  }
+
+  getTodoSectionBounds(
+    content: string
+  ): { start: number; end: number } | null {
+    const headerMatch = content.match(/^### TODO:\s*$/m);
+    if (!headerMatch) return null;
+    const start = (headerMatch.index ?? 0) + headerMatch[0].length;
+    const rest = content.slice(start);
+    const nextHeader = rest.search(/\n###\s+/);
+    const end = nextHeader === -1 ? content.length : start + nextHeader;
+    return { start, end };
+  }
+
+  async syncLifeCanvas() {
+    const lifeFile = this.app.vault.getAbstractFileByPath("LIFE.md");
+    if (!(lifeFile instanceof TFile)) {
+      new Notice("LIFE.md not found.");
+      return;
+    }
+    const lifeContent = await this.app.vault.read(lifeFile);
+    const tasksByDate = new Map<string, string[]>();
+    for (const line of lifeContent.split("\n")) {
+      if (!/^\s*-\s+\[[xX]\]/.test(line)) continue;
+      const doneMatch = line.match(/✅\s+(\d{4}-\d{2}-\d{2})/);
+      if (!doneMatch) continue;
+      const taskText = this.cleanLifeTaskText(line);
+      if (!taskText) continue;
+      const date = doneMatch[1];
+      if (!tasksByDate.has(date)) {
+        tasksByDate.set(date, []);
+      }
+      tasksByDate.get(date)!.push(taskText);
+    }
+    if (tasksByDate.size === 0) {
+      new Notice("No completed LIFE tasks with done dates found.");
+      return;
+    }
+    let filesUpdated = 0;
+    let tasksAdded = 0;
+    let missingJournals = 0;
+    for (const [date, taskTexts] of tasksByDate.entries()) {
+      const journalFile = this.findLifeJournalFile(date);
+      if (!journalFile) {
+        missingJournals++;
+        console.warn(`No journal file found for ${date}.`);
+        continue;
+      }
+      const journalContent = await this.app.vault.read(journalFile);
+      const bounds = this.getTodoSectionBounds(journalContent);
+      if (!bounds) {
+        console.warn(`No ### TODO: section found in ${journalFile.path}.`);
+        continue;
+      }
+      const existingSection = journalContent.slice(bounds.start, bounds.end);
+      const existingLines = existingSection
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line !== "");
+      const existingTaskTexts = new Set(
+        existingLines
+          .filter((line) => /^- \[[xX]\]/.test(line))
+          .map((line) => line.replace(/^- \[[xX]\]\s+/, "").trim())
+      );
+      const addedLines: string[] = [];
+      for (const taskText of taskTexts) {
+        if (!existingTaskTexts.has(taskText)) {
+          addedLines.push(`- [x] ${taskText}`);
+          existingTaskTexts.add(taskText);
+        }
+      }
+      if (addedLines.length === 0) continue;
+      const keptLines = existingLines.filter(
+        (line) => line !== "Move any real next action to [[../LIFE|LIFE]]."
+      );
+      const newSection = `\n${[...keptLines, ...addedLines].join("\n")}\n`;
+      const updatedContent =
+        journalContent.slice(0, bounds.start) +
+        newSection +
+        journalContent.slice(bounds.end);
+      await this.app.vault.modify(journalFile, updatedContent);
+      filesUpdated++;
+      tasksAdded += addedLines.length;
+    }
+    if (tasksAdded > 0) {
+      new Notice(
+        `Sync LIFE canvas: added ${tasksAdded} cleared task(s) to ${filesUpdated} journal file(s).`
+      );
+    } else if (missingJournals > 0) {
+      new Notice(
+        `Sync LIFE canvas: no updates. ${missingJournals} journal file(s) missing.`
+      );
+    } else {
+      new Notice("Sync LIFE canvas: already up to date.");
+    }
+  }
+
   /**
    * Syncs Habitica data to frontmatter in all journal files.
    * - Scans all YYYY-MM-DD.md files in the journal folder
@@ -231,7 +358,7 @@ export default class HabsiadPlugin extends Plugin {
     }
 
     // Get the frontmatter glossary mapping
-    const pluginFolder = `${this.app.vault.configDir}/plugins/Habsiad`;
+    const pluginFolder = `${this.app.vault.configDir}/plugins/habsiad`;
     const glossaryFileName = "frontmatterGlossary.json";
     const glossaryPath = `${pluginFolder}/${glossaryFileName}`;
 
@@ -299,9 +426,9 @@ export default class HabsiadPlugin extends Plugin {
       const habitCounters: { [key: string]: number } = {};
       const completedDailies: string[] = [];
 
-      // Extract habit counters (e.g., "Habit clicked: Act of Love 💖 - Positive: 2, Negative: 0")
+      // Extract habit counters (e.g., "Act of Love 💖 - Positive: 2, Negative: 0")
       const habitRegex =
-        /\* Habit clicked: (.*?) - Positive: (\d+), Negative: (\d+)/g;
+        /\* (.*?) - Positive: (\d+), Negative: (\d+)/g;
       let habitMatch;
       while ((habitMatch = habitRegex.exec(content)) !== null) {
         const habitName = habitMatch[1];

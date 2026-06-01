@@ -32,7 +32,7 @@ export class UtilityCommands {
 
     // Check if the file matches the expected yyyy-mm-dd.md pattern
     const fileName = file.name;
-    const match = fileName.match(/^(\\d{4})-(\\d{2})-(\\d{2})\\.md$/);
+    const match = fileName.match(/^(\d{4})-(\d{2})-(\d{2})\.md$/);
     if (!match) {
       new Notice("This is not a valid journal file.");
       return;
@@ -54,7 +54,7 @@ export class UtilityCommands {
 
     // Replace "# {WEEKDAY}" with the actual weekday
     const updatedBodyContent = bodyContent.replace(
-      /^# \\{WEEKDAY\\}/m,
+      /^# \{WEEKDAY\}/m,
       `# ${weekday}`
     );
 
