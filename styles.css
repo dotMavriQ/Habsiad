@@ -948,13 +948,13 @@ button,
   background-color: var(--background-primary);
 }
 
-/* --- Consistent colour-emoji rendering across the whole plugin ---
+/* --- Consistent colour-emoji rendering for emoji-only elements ---
    Electron's per-glyph font fallback otherwise renders some emojis in colour
-   and others as monochrome symbol glyphs. Forcing a colour-emoji font first
-   (with the normal interface font as fallback for non-emoji text) keeps every
-   emoji the extension draws in full colour. */
-.habsiad-tab-container,
-.habsiad-content-area,
+   and others as monochrome symbol glyphs. We force a colour-emoji font ONLY on
+   elements that contain nothing but emoji (tab icons, status/meal indicators,
+   the mood graph glyphs and emoji lists). It must NOT be applied to containers
+   that also hold numbers/dates, or digits get rendered as emoji glyphs. */
+.habsiad-tab,
 .habsiad-mood-emoji,
 .habsiad-mood-emojis,
 .habsiad-alcohol-emojis,
