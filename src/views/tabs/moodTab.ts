@@ -313,10 +313,18 @@ export class MoodTab {
       return;
     }
 
-    const cssWidth = wrapper.clientWidth || 600;
+    const cssWidth =
+      Math.round(wrapper.getBoundingClientRect().width) ||
+      wrapper.clientWidth ||
+      600;
+    // Not laid out yet (common on first paint, especially mobile). The
+    // ResizeObserver will call back with the real width.
+    if (cssWidth < 80) return;
     const wide = cssWidth >= 900;
-    const margin = { top: 16, right: 16, bottom: 44, left: 28 };
-    const width = Math.max(240, cssWidth - margin.left - margin.right);
+    // Symmetric side margins: there's no y-axis, so equal left/right keeps the
+    // gradient board centred instead of leaning right on narrow screens.
+    const margin = { top: 16, right: 14, bottom: 44, left: 14 };
+    const width = Math.max(120, cssWidth - margin.left - margin.right);
     const plotH = wide ? 520 : 320;
     const height = plotH + margin.top + margin.bottom;
 
