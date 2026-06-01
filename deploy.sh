@@ -17,7 +17,10 @@ error()   { echo -e "${RED}[ERROR]${NC} $1"; }
 REPO_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Live Obsidian vault. Override with HABSIAD_PLUGIN_PATH=/path ./deploy.sh
 PLUGIN_PATH="${HABSIAD_PLUGIN_PATH:-/home/dotmavriq/Documents/NOTES/LIFE/.obsidian/plugins/Habsiad}"
-BACKUP_PATH="${PLUGIN_PATH}-backup"
+# Back up OUTSIDE the vault's plugins folder. A backup that lives next to the
+# plugin (with its manifest.json) is itself scanned by Obsidian as a duplicate
+# plugin with the same id — which shadows the real one. Keep backups in cache.
+BACKUP_PATH="${HOME}/.cache/habsiad-deploy-backups/Habsiad-$(date +%Y%m%d-%H%M%S)"
 
 cd "$REPO_PATH"
 
