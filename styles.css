@@ -948,7 +948,49 @@ button,
   background-color: var(--background-primary);
 }
 
+/* --- Consistent colour-emoji rendering across the whole plugin ---
+   Electron's per-glyph font fallback otherwise renders some emojis in colour
+   and others as monochrome symbol glyphs. Forcing a colour-emoji font first
+   (with the normal interface font as fallback for non-emoji text) keeps every
+   emoji the extension draws in full colour. */
+.habsiad-tab-container,
+.habsiad-content-area,
+.habsiad-mood-emoji,
+.habsiad-mood-emojis,
+.habsiad-alcohol-emojis,
+.emoji-indicator {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
+    "Twemoji Mozilla", "EmojiOne Color", "Segoe UI Symbol",
+    var(--font-interface, sans-serif);
+}
+
 /* --- Mood Index tab --- */
+.habsiad-mood-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.habsiad-mood-nav-btn {
+  cursor: pointer;
+  padding: 2px 10px;
+  border-radius: 4px;
+}
+
+.habsiad-mood-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.habsiad-mood-range {
+  min-width: 130px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
 .habsiad-mood-graph {
   width: 100%;
   margin: 10px 0 6px;

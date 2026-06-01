@@ -1,8 +1,6 @@
 import { App, TFile, TFolder } from "obsidian";
 import HabsiadPlugin from "../../main";
 
-const SVG_NS = "http://www.w3.org/2000/svg";
-
 /**
  * Ordered emotion scale, best -> worst. A grapheme only counts towards the mood
  * graph if it appears here, which filters out incidental emojis/digits. Index in
@@ -24,11 +22,19 @@ const EMOTION_RANK: Map<string, number> = new Map(
   EMOTION_SCALE.map((emoji, i) => [emoji, i])
 );
 
+const QUARTER_NAMES = [
+  ["Jan", "Mar"],
+  ["Apr", "Jun"],
+  ["Jul", "Sep"],
+  ["Oct", "Dec"],
+];
+
 interface MoodPoint {
   date: string; // YYYY-MM-DD
   time: number; // ms timestamp used for x ordering (day start + per-emoji offset)
   emoji: string;
   rank: number; // index in EMOTION_SCALE (0 = best)
+  quarter: number; // year*4 + quarter index
   file: TFile;
 }
 
@@ -36,14 +42,25 @@ interface DayMoods {
   date: string;
   file: TFile;
   emojis: string[]; // in order of appearance
+  quarter: number;
 }
 
 export class MoodTab {
   private app: App;
   private plugin: HabsiadPlugin;
-  private container: HTMLElement | null = null;
-  private points: MoodPoint[] = [];
   private resizeObserver?: ResizeObserver;
+
+  private allPoints: MoodPoint[] = [];
+  private allDays: DayMoods[] = [];
+  private quarters: number[] = []; // sorted asc, only quarters with data
+  private currentIndex = 0;
+
+  // Re-rendered per page.
+  private rangeLabel?: HTMLElement;
+  private prevBtn?: HTMLButtonElement;
+  private nextBtn?: HTMLButtonElement;
+  private graphWrapper?: HTMLElement;
+  private listWrapper?: HTMLElement;
 
   constructor(app: App, plugin: HabsiadPlugin) {
     this.app = app;
@@ -51,7 +68,6 @@ export class MoodTab {
   }
 
   async render(container: HTMLElement): Promise<void> {
-    this.container = container;
     container.empty();
 
     const journalFolderName =
@@ -69,10 +85,9 @@ export class MoodTab {
 
     container.createEl("h3", { text: "Mood Index" });
 
-    const { points, days } = await this.collectMoods(journalFolder);
-    this.points = points;
+    await this.collectMoods(journalFolder);
 
-    if (points.length === 0) {
+    if (this.allPoints.length === 0) {
       container.createEl("p", {
         text: "No mood emojis found in your journal Summary/Reflections sections.",
         cls: "habsiad-no-data",
@@ -80,22 +95,55 @@ export class MoodTab {
       return;
     }
 
-    // Graph (responsive: redrawn when the sidebar is resized).
-    const graphWrapper = container.createDiv("habsiad-mood-graph");
-    this.drawGraph(graphWrapper);
+    // Quarters that actually contain data, newest selected by default.
+    this.quarters = Array.from(
+      new Set(this.allDays.map((d) => d.quarter))
+    ).sort((a, b) => a - b);
+    this.currentIndex = this.quarters.length - 1;
+
+    // Pagination header (◀ older / newer ▶).
+    const nav = container.createDiv("habsiad-mood-nav");
+    this.prevBtn = nav.createEl("button", {
+      text: "◀",
+      cls: "habsiad-mood-nav-btn",
+    });
+    this.prevBtn.setAttr("title", "Older quarter");
+    this.rangeLabel = nav.createEl("span", { cls: "habsiad-mood-range" });
+    this.nextBtn = nav.createEl("button", {
+      text: "▶",
+      cls: "habsiad-mood-nav-btn",
+    });
+    this.nextBtn.setAttr("title", "Newer quarter");
+
+    this.prevBtn.addEventListener("click", () => {
+      if (this.currentIndex > 0) {
+        this.currentIndex--;
+        this.renderWindow();
+      }
+    });
+    this.nextBtn.addEventListener("click", () => {
+      if (this.currentIndex < this.quarters.length - 1) {
+        this.currentIndex++;
+        this.renderWindow();
+      }
+    });
+
+    this.graphWrapper = container.createDiv("habsiad-mood-graph");
+    this.listWrapper = container.createDiv("habsiad-mood-list");
 
     if (typeof ResizeObserver !== "undefined") {
       this.resizeObserver?.disconnect();
       let pending = 0;
       this.resizeObserver = new ResizeObserver(() => {
         window.clearTimeout(pending);
-        pending = window.setTimeout(() => this.drawGraph(graphWrapper), 120);
+        pending = window.setTimeout(() => {
+          if (this.graphWrapper) this.drawGraph(this.graphWrapper);
+        }, 120);
       });
-      this.resizeObserver.observe(graphWrapper);
+      this.resizeObserver.observe(this.graphWrapper);
     }
 
-    // Per-date list view (most recent first).
-    this.drawList(container, days);
+    this.renderWindow();
   }
 
   /** Detach the resize observer (called when the tab is torn down). */
@@ -104,11 +152,49 @@ export class MoodTab {
     this.resizeObserver = undefined;
   }
 
+  // --- Pagination ----------------------------------------------------------
+
+  private currentQuarter(): number {
+    return this.quarters[this.currentIndex];
+  }
+
+  private windowPoints(): MoodPoint[] {
+    const q = this.currentQuarter();
+    return this.allPoints.filter((p) => p.quarter === q);
+  }
+
+  private windowDays(): DayMoods[] {
+    const q = this.currentQuarter();
+    return this.allDays.filter((d) => d.quarter === q);
+  }
+
+  private renderWindow(): void {
+    if (this.rangeLabel) {
+      this.rangeLabel.setText(this.quarterLabel(this.currentQuarter()));
+    }
+    if (this.prevBtn) this.prevBtn.disabled = this.currentIndex <= 0;
+    if (this.nextBtn) {
+      this.nextBtn.disabled = this.currentIndex >= this.quarters.length - 1;
+    }
+    if (this.graphWrapper) this.drawGraph(this.graphWrapper);
+    if (this.listWrapper) this.drawList(this.listWrapper);
+  }
+
+  private quarterOf(date: string): number {
+    const year = parseInt(date.slice(0, 4), 10);
+    const month = parseInt(date.slice(5, 7), 10);
+    return year * 4 + Math.floor((month - 1) / 3);
+  }
+
+  private quarterLabel(q: number): string {
+    const year = Math.floor(q / 4);
+    const qi = q % 4;
+    return `${QUARTER_NAMES[qi][0]}–${QUARTER_NAMES[qi][1]} ${year}`;
+  }
+
   // --- Data collection -----------------------------------------------------
 
-  private async collectMoods(
-    root: TFolder
-  ): Promise<{ points: MoodPoint[]; days: DayMoods[] }> {
+  private async collectMoods(root: TFolder): Promise<void> {
     const files = this.collectJournalFiles(root);
     const points: MoodPoint[] = [];
     const days: DayMoods[] = [];
@@ -117,6 +203,7 @@ export class MoodTab {
       const match = file.basename.match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if (!match) continue;
       const date = match[0];
+      const quarter = this.quarterOf(date);
       const dayStart = new Date(`${date}T00:00:00`).getTime();
 
       let content: string;
@@ -130,13 +217,14 @@ export class MoodTab {
       const emojis = this.extractMoodEmojis(content);
       if (emojis.length === 0) continue;
 
-      days.push({ date, file, emojis });
+      days.push({ date, file, emojis, quarter });
       emojis.forEach((emoji, i) => {
         points.push({
           date,
           time: dayStart + i * 60000,
           emoji,
           rank: EMOTION_RANK.get(emoji) as number,
+          quarter,
           file,
         });
       });
@@ -144,7 +232,8 @@ export class MoodTab {
 
     points.sort((a, b) => a.time - b.time);
     days.sort((a, b) => b.date.localeCompare(a.date));
-    return { points, days };
+    this.allPoints = points;
+    this.allDays = days;
   }
 
   /** Recursively gather YYYY-MM-DD.md files (journals live in root and year subfolders). */
@@ -214,18 +303,28 @@ export class MoodTab {
 
   private drawGraph(wrapper: HTMLElement): void {
     wrapper.empty();
-    const data = this.points;
-    if (data.length === 0) return;
+    const data = this.windowPoints();
+    if (data.length === 0) {
+      wrapper.createEl("p", {
+        text: "No mood emojis in this period.",
+        cls: "habsiad-no-data",
+      });
+      return;
+    }
 
     const cssWidth = wrapper.clientWidth || 600;
     const wide = cssWidth >= 900;
     const margin = { top: 16, right: 16, bottom: 44, left: 28 };
     const width = Math.max(240, cssWidth - margin.left - margin.right);
-    const plotH = wide ? 560 : 320;
+    const plotH = wide ? 520 : 320;
     const height = plotH + margin.top + margin.bottom;
 
     const svg = wrapper.createSvg("svg", {
-      attr: { width: "100%", height: `${height}`, viewBox: `0 0 ${cssWidth} ${height}` },
+      attr: {
+        width: "100%",
+        height: `${height}`,
+        viewBox: `0 0 ${cssWidth} ${height}`,
+      },
       cls: "habsiad-mood-svg",
     });
 
@@ -350,15 +449,17 @@ export class MoodTab {
           fill: "var(--text-faint, #928374)",
         },
       });
-      label.textContent = date;
+      label.textContent = date.slice(5); // MM-DD within the quarter
     }
   }
 
   // --- List view -----------------------------------------------------------
 
-  private drawList(container: HTMLElement, days: DayMoods[]): void {
-    container.createEl("h4", { text: "By date" });
-    const table = container.createEl("table", { cls: "habsiad-mood-table" });
+  private drawList(wrapper: HTMLElement): void {
+    wrapper.empty();
+    const days = this.windowDays();
+    wrapper.createEl("h4", { text: "By date" });
+    const table = wrapper.createEl("table", { cls: "habsiad-mood-table" });
     const thead = table.createEl("thead");
     const headerRow = thead.createEl("tr");
     headerRow.createEl("th", { text: "Date" });
