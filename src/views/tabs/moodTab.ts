@@ -283,7 +283,8 @@ export class MoodTab {
       if (inReflections && line.startsWith("###")) inReflections = false;
 
       if (inSummary) text += " " + line;
-      if (inReflections && line.startsWith("-")) text += " " + line;
+      if (inReflections && (line.startsWith("- ") || line.startsWith("* ")))
+        text += " " + line;
     }
 
     return this.graphemes(text).filter((g) => EMOTION_RANK.has(g));

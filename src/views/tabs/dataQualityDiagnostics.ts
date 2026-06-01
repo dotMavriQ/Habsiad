@@ -286,8 +286,10 @@ export class DataQualityDiagnosticsView {
         );
         reflectionsSection = reflectionsMatch ? reflectionsMatch[1].trim() : "";
       } else {
+        // Bound to the next H2 header so a later "## Completed Dailies"
+        // (whose "* " lines aren't reflections) can't bleed into the count.
         const reflectionsStartMatch = fileContent.match(
-          /### Reflections:\s*([\s\S]*)/
+          /### Reflections:\s*([\s\S]*?)(?=\n## |$)/
         );
         reflectionsSection = reflectionsStartMatch
           ? reflectionsStartMatch[1].trim()
@@ -297,11 +299,13 @@ export class DataQualityDiagnosticsView {
         .split("\n")
         .map((line) => line.trim())
         .filter((line) => line !== "");
-      const bulletLines = reflectionLines.filter((line) =>
-        line.startsWith("- ")
+      // Canonical journal bullet is "- "; also tolerate "* " (with the space,
+      // so *italic*/**bold** lines aren't miscounted) as insurance. (#15)
+      const bulletLines = reflectionLines.filter(
+        (line) => line.startsWith("- ") || line.startsWith("* ")
       );
-      // Use regex to match a template bullet (allowing minor variations)
-      const templatePattern = /- Thoughts or notes about personal life/i;
+      // Match a template bullet (either bullet style) to detect empty entries.
+      const templatePattern = /^[-*] Thoughts or notes about personal life/i;
       if (
         bulletLines.length === 0 ||
         (bulletLines.length === 1 && templatePattern.test(bulletLines[0]))
