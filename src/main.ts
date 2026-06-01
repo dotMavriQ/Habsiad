@@ -88,6 +88,13 @@ export default class HabsiadPlugin extends Plugin {
       callback: () => this.utilityCommands.syncTodo(),
     });
 
+    // Register the bullet-list normalizer (enforce "- " in the active note)
+    this.addCommand({
+      id: "normalize-bullet-lists",
+      name: "Normalize bullet lists (use -)",
+      callback: () => this.utilityCommands.normalizeBulletLists(),
+    });
+
     // Register the LIFE canvas sync command
     this.addCommand({
       id: "sync-life-canvas",

@@ -74,6 +74,61 @@ export class UtilityCommands {
   }
 
   /**
+   * Normalises handwritten bullet lists to the "- " marker so a note adheres to
+   * the journal standard. Obsidian can leave "* " bullets behind, and several
+   * plugin features key off "- ". This converts line-start "* " to "- " while
+   * leaving:
+   *  - the Habitica-generated sections (## Achievements / ## Completed Dailies),
+   *    which intentionally use "* " and are parsed expecting it,
+   *  - fenced code blocks, and
+   *  - inline *italic* / **bold** (only a "* " at line start with a space is a
+   *    bullet).
+   */
+  async normalizeBulletLists(file?: TFile) {
+    if (!file) {
+      const activeView =
+        this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+      file = activeView?.file ?? undefined;
+    }
+    if (!file) {
+      new Notice("Open a note to normalize its bullet lists.");
+      return;
+    }
+
+    const content = await this.plugin.app.vault.read(file);
+    const lines = content.split("\n");
+    let inCodeFence = false;
+    let inHabiticaSection = false;
+    let changed = 0;
+
+    const updated = lines.map((line) => {
+      if (line.trimStart().startsWith("```")) {
+        inCodeFence = !inCodeFence;
+        return line;
+      }
+      if (/^## /.test(line)) {
+        inHabiticaSection = /^## (Achievements|Completed Dailies)/.test(line);
+      }
+      if (!inCodeFence && !inHabiticaSection) {
+        const match = line.match(/^(\s*)\* (.*)$/);
+        if (match) {
+          changed++;
+          return `${match[1]}- ${match[2]}`;
+        }
+      }
+      return line;
+    });
+
+    if (changed === 0) {
+      new Notice('No "*" bullets to normalize.');
+      return;
+    }
+
+    await this.plugin.app.vault.modify(file, updated.join("\n"));
+    new Notice(`Normalized ${changed} bullet${changed === 1 ? "" : "s"} to "-".`);
+  }
+
+  /**
    * Syncs the TODO section of the active journal file with Habitica tasks.
    * - It verifies the file is in YYYY-MM-DD.md format.
    * - It locates the "### TODO:" header and determines the block boundaries.
