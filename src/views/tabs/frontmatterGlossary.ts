@@ -1,4 +1,4 @@
-import { FileSystemAdapter, Notice, TFile, TFolder } from "obsidian";
+import { Notice, TFile, TFolder } from "obsidian";
 import HabsiadPlugin from "../../main";
 
 interface GlossaryEntry {
@@ -11,45 +11,10 @@ type GlossaryMapping = { [key: string]: GlossaryEntry };
 let glossaryMapping: GlossaryMapping = {};
 const glossaryFileName = "frontmatterGlossary.json";
 
-/**
- * Resolves an Electron/Node module via the desktop runtime's `require`.
- * Returns null on mobile or when the module is unavailable.
- */
-function getElectronModule(moduleName: string): any {
-  const electronRequire = (window as any).require;
-  if (typeof electronRequire !== "function") {
-    return null;
-  }
-  try {
-    return electronRequire(moduleName);
-  } catch (error) {
-    console.warn(`Failed to load ${moduleName}:`, error);
-    return null;
-  }
-}
+// Shown in the Habitica-key field when an entry is locked (not gathered from
+// Habitica). Kept as a constant so it's never mistaken for a real saved value.
+const DISABLED_PLACEHOLDER = "Data is not gathered from Habitica";
 
-function getElectronDialog(): any {
-  const remote = getElectronModule("@electron/remote");
-  if (remote?.dialog) {
-    return remote.dialog;
-  }
-  const electron = getElectronModule("electron");
-  if (electron?.dialog) {
-    return electron.dialog;
-  }
-  if (electron?.remote?.dialog) {
-    return electron.remote.dialog;
-  }
-  return null;
-}
-
-function getNodeFs(): any {
-  const fsModule = getElectronModule("fs");
-  if (fsModule?.promises) {
-    return fsModule.promises;
-  }
-  return null;
-}
 
 /**
  * Loads the glossary mapping from frontmatterGlossary.json.
@@ -152,20 +117,6 @@ export async function saveHabiticaKey(
   await saveGlossaryMapping(plugin);
 }
 
-function getDefaultDialogPath(
-  plugin: HabsiadPlugin,
-  fileName: string
-): string | undefined {
-  const adapter = plugin.app.vault.adapter;
-  if (adapter instanceof FileSystemAdapter) {
-    const pathModule = (window as any).require?.("path");
-    if (pathModule) {
-      return pathModule.join(adapter.getBasePath(), fileName);
-    }
-  }
-  return undefined;
-}
-
 /**
  * Validates and normalizes arbitrary parsed JSON into the glossary mapping
  * shape, migrating legacy string values to { habiticaKey, isDisabled }.
@@ -217,36 +168,18 @@ export async function applyGlossaryJson(
   await saveGlossaryMapping(plugin);
 }
 
+// A plain, predictable file at the vault root. Export writes it, import reads
+// it, and Obsidian sync carries it between devices -- no native OS dialogs,
+// no arbitrary filesystem paths, and it works on mobile.
+const glossaryExportFile = "frontmatterGlossary.json";
+
 async function exportGlossary(plugin: HabsiadPlugin): Promise<void> {
   try {
-    const dialog = getElectronDialog();
-    const fs = getNodeFs();
-    if (!dialog || !fs) {
-      new Notice("Export is available only on the desktop app.");
-      return;
-    }
-    const timestamp = new Date()
-      .toISOString()
-      .replace(/[:T]/g, "-")
-      .split(".")[0];
-    const defaultPath = getDefaultDialogPath(
-      plugin,
-      `frontmatterGlossary-${timestamp}.json`
-    );
-    const result = await dialog.showSaveDialog({
-      title: "Export Habsiad Frontmatter Glossary",
-      defaultPath,
-      filters: [{ name: "JSON", extensions: ["json"] }],
-    });
-    if (result.canceled || !result.filePath) {
-      new Notice("Glossary export cancelled.");
-      return;
-    }
     await loadGlossaryMapping(plugin);
     const output = JSON.stringify(glossaryMapping, null, 4);
-    await fs.writeFile(result.filePath, output, "utf8");
-    new Notice("Glossary exported successfully.");
-    console.log("Glossary exported to", result.filePath);
+    await plugin.app.vault.adapter.write(glossaryExportFile, output);
+    new Notice(`Glossary exported to "${glossaryExportFile}" in your vault.`);
+    console.log("Glossary exported to", glossaryExportFile);
   } catch (error) {
     console.error("Failed to export glossary:", error);
     new Notice("Failed to export glossary. See console for details.");
@@ -255,35 +188,25 @@ async function exportGlossary(plugin: HabsiadPlugin): Promise<void> {
 
 async function importGlossary(plugin: HabsiadPlugin): Promise<boolean> {
   try {
-    const dialog = getElectronDialog();
-    const fs = getNodeFs();
-    if (!dialog || !fs) {
-      new Notice("Import is available only on the desktop app.");
+    const exists = await plugin.app.vault.adapter.exists(glossaryExportFile);
+    if (!exists) {
+      new Notice(
+        `No "${glossaryExportFile}" found in your vault. Export from another ` +
+          `device first, or use Settings → Paste Glossary JSON.`
+      );
       return false;
     }
-    const defaultPath = getDefaultDialogPath(plugin, "frontmatterGlossary.json");
-    const result = await dialog.showOpenDialog({
-      title: "Import Habsiad Frontmatter Glossary",
-      defaultPath,
-      filters: [{ name: "JSON", extensions: ["json"] }],
-      properties: ["openFile"],
-    });
-    const filePath = result.filePaths?.[0];
-    if (result.canceled || !filePath) {
-      new Notice("Glossary import cancelled.");
-      return false;
-    }
-    const fileContents = await fs.readFile(filePath, "utf8");
+    const fileContents = await plugin.app.vault.adapter.read(glossaryExportFile);
     const parsed = JSON.parse(fileContents);
     const normalized = normalizeGlossaryData(parsed);
     glossaryMapping = normalized;
     await saveGlossaryMapping(plugin);
-    new Notice("Glossary imported successfully.");
-    console.log("Glossary imported from", filePath);
+    new Notice(`Glossary imported from "${glossaryExportFile}".`);
+    console.log("Glossary imported from", glossaryExportFile);
     return true;
   } catch (error) {
     console.error("Failed to import glossary:", error);
-    new Notice("Failed to import glossary. See console for details.");
+    new Notice("Invalid glossary JSON. See console for details.");
     return false;
   }
 }
@@ -393,71 +316,71 @@ export async function displayGlossaryTable(
         value: getHabiticaKey(key),
       });
 
-      input.addEventListener("change", async () => {
-        const userValue = input.value.trim();
-        console.log(
-          `User entered Habitica key for frontmatter key "${key}":`,
-          userValue
-        );
-        await saveHabiticaKey(plugin, key, userValue);
-      });
-
-      // Column B: Clickable frontmatter key that can lock the input field.
+      // Column B: Clickable frontmatter key that locks/unlocks the entry.
       const keyCell = row.createEl("td");
       keyCell.setText(key);
       keyCell.addClass("locked");
       keyCell.addClass("clickable-frontmatter-key");
 
-      // Check if this key has a stored Habitica value (protection mode)
-      const hasStoredValue = getHabiticaKey(key).trim().length > 0;
-      const isCurrentlyDisabled = isKeyDisabled(key);
+      // Paint the row from the live stored state. Three mutually exclusive
+      // states: has a Habitica key (protected), locked (disabled), or empty.
+      const applyState = () => {
+        const value = getHabiticaKey(key).trim();
+        const disabled = isKeyDisabled(key);
 
-      if (hasStoredValue) {
-        // Protected mode: entries with values can't be clicked to disable
-        keyCell.addClass("habsiad-disabled");
-        keyCell.classList.add("protected-entry");
-      } else {
-        // Normal mode: empty entries can be clicked to toggle disabled state
-        keyCell.addClass("habsiad-clickable");
+        keyCell.removeClass("habsiad-disabled");
+        keyCell.removeClass("protected-entry");
+        keyCell.removeClass("habsiad-clickable");
+        keyCell.removeClass("habsiad-highlighted-cell");
 
-        // Initialize the display based on stored disabled state
-        if (isCurrentlyDisabled) {
-          input.value = "Data is not gathered from Habitica";
+        if (value.length > 0) {
+          // Protected: an entry with a Habitica key can't be locked.
+          keyCell.addClass("habsiad-disabled");
+          keyCell.addClass("protected-entry");
+          input.disabled = false;
+          input.removeClass("habsiad-input-placeholder");
+          if (input.value === DISABLED_PLACEHOLDER) input.value = value;
+        } else if (disabled) {
+          // Locked: still clickable so it can always be unlocked again.
+          keyCell.addClass("habsiad-clickable");
+          keyCell.addClass("habsiad-highlighted-cell");
+          input.value = DISABLED_PLACEHOLDER;
           input.disabled = true;
           input.addClass("habsiad-input-placeholder");
-          keyCell.addClass("habsiad-highlighted-cell");
+        } else {
+          // Empty: free to type a key or click to lock.
+          keyCell.addClass("habsiad-clickable");
+          input.disabled = false;
+          input.removeClass("habsiad-input-placeholder");
+          if (input.value === DISABLED_PLACEHOLDER) input.value = "";
         }
+      };
 
-        keyCell.addEventListener("click", async () => {
-          // Double-check that no value was added since initialization
-          const currentValue = getHabiticaKey(key).trim();
-          if (currentValue.length > 0) {
-            // Value was added, switch to protected mode
-            keyCell.removeClass("habsiad-clickable");
-            keyCell.addClass("habsiad-disabled");
-            keyCell.classList.add("protected-entry");
-            return;
-          }
+      input.addEventListener("change", async () => {
+        if (input.disabled) return;
+        let userValue = input.value.trim();
+        if (userValue === DISABLED_PLACEHOLDER) userValue = "";
+        await saveHabiticaKey(plugin, key, userValue);
+        // A real key wins over a stale lock, keeping the two states exclusive.
+        if (userValue.length > 0 && isKeyDisabled(key)) {
+          await setKeyDisabled(plugin, key, false);
+        }
+        applyState();
+      });
 
-          const currentlyDisabled = isKeyDisabled(key);
+      keyCell.addEventListener("click", async () => {
+        const value = getHabiticaKey(key).trim();
+        if (isKeyDisabled(key)) {
+          await setKeyDisabled(plugin, key, false); // unlocking is always allowed
+        } else if (value.length > 0) {
+          new Notice("Clear the Habitica key before locking this entry.");
+        } else {
+          await setKeyDisabled(plugin, key, true);
+        }
+        applyState();
+      });
 
-          if (!currentlyDisabled) {
-            // Lock the input field and save state
-            input.value = "Data is not gathered from Habitica";
-            input.disabled = true;
-            input.addClass("habsiad-input-placeholder");
-            keyCell.addClass("habsiad-highlighted-cell");
-            await setKeyDisabled(plugin, key, true);
-          } else {
-            // Unlock the input field and save state
-            input.value = "";
-            input.disabled = false;
-            input.removeClass("habsiad-input-placeholder");
-            keyCell.removeClass("habsiad-highlighted-cell");
-            await setKeyDisabled(plugin, key, false);
-          }
-        });
-      }
+      applyState();
     }
   }
 }

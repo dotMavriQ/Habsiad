@@ -1,5 +1,9 @@
-import { App, Modal, TFile, Notice } from "obsidian";
+import { App, Editor, MarkdownView, Modal, TFile, Notice } from "obsidian";
 import type { IHabsiadPlugin } from "../habitica/types/obsidian";
+import {
+  buildHabiticaBlock,
+  extractHabiticaSections,
+} from "../utils/journalSections";
 
 /**
  * RetroTagger Modal - Allows users to add achievements and dailies to journal entries
@@ -301,7 +305,20 @@ export class RetroTaggerModal extends Modal {
     }
   }
 
-  // Render the selected items to the journal entry
+  // Find the open editor for a file so writes update the view immediately
+  // (vault.modify on an open note can leave the editor showing stale text).
+  private getOpenEditor(file: TFile): Editor | null {
+    for (const leaf of this.app.workspace.getLeavesOfType("markdown")) {
+      const view = leaf.view;
+      if (view instanceof MarkdownView && view.file?.path === file.path) {
+        return view.editor;
+      }
+    }
+    return null;
+  }
+
+  // Render the selected items to the journal entry, consolidating the two
+  // Habitica sections at the bottom of the note.
   private async renderSelectedItems() {
     try {
       const activeFile = this.app.workspace.getActiveFile();
@@ -310,118 +327,55 @@ export class RetroTaggerModal extends Modal {
         return;
       }
 
-      let content = await this.app.vault.read(activeFile);
+      const content = await this.app.vault.read(activeFile);
 
-      // Group items by type, separating new from existing
-      const newAchievements: string[] = [];
-      const newDailies: string[] = [];
-
-      // Parse existing entries to avoid duplicates
-      const existingAchievements = await this.getExistingAchievements(content);
-      const existingDailies = await this.getExistingDailies(content);
-
-      for (const [key, type] of Object.entries(this.selectedItems)) {
-        if (type === "achievement" && !existingAchievements.includes(key)) {
-          newAchievements.push(key);
-        } else if (type === "daily" && !existingDailies.includes(key)) {
-          newDailies.push(key);
-        }
-      }
-
-      // Create the new sections
-      let newContent = "";
-
-      // Check if the file already has the Achievements section
-      const achievementsRegex = new RegExp(
-        `## Achievements on ${this.journalDate}`
+      // Pull out whatever achievements/dailies already exist (in their proper,
+      // line-anchored sections) so we can merge rather than duplicate.
+      const { body, achievements, dailies } = extractHabiticaSections(
+        content,
+        this.journalDate
       );
-      const hasAchievementsSection = achievementsRegex.test(content);
 
-      // Check if the file already has the Completed Dailies section
-      const dailiesRegex = /## Completed Dailies/;
-      const hasCompletedDailiesSection = dailiesRegex.test(content);
+      const achievementNames = achievements.map((line) =>
+        line.split(/\s+-\s+Positive:/)[0].trim()
+      );
 
-      if (newAchievements.length > 0) {
-        if (hasAchievementsSection) {
-          // Append to existing Achievements section
-          const achievementsSectionRegex = new RegExp(
-            `(## Achievements on ${this.journalDate}[\\s\\S]*?)(?=\\n##|$)`
-          );
-          const match = content.match(achievementsSectionRegex);
-
-          if (match) {
-            const existingSection = match[1];
-            const newSection =
-              existingSection +
-              "\n" +
-              newAchievements
-                .map(
-                  (item: string) =>
-                    `* ${item} - Positive: 1, Negative: 0`
-                )
-                .join("\n");
-            content = content.replace(existingSection, newSection);
+      let added = 0;
+      for (const [key, type] of Object.entries(this.selectedItems)) {
+        if (type === "achievement") {
+          if (!achievementNames.includes(key)) {
+            achievements.push(`${key} - Positive: 1, Negative: 0`);
+            achievementNames.push(key);
+            added++;
           }
-        } else {
-          // Create new Achievements section
-          newContent += `\n## Achievements on ${this.journalDate}\n`;
-          newContent += newAchievements
-            .map((item: string) => `* ${item} - Positive: 1, Negative: 0`)
-            .join("\n");
+        } else if (type === "daily") {
+          if (!dailies.includes(key)) {
+            dailies.push(key);
+            added++;
+          }
         }
       }
 
-      if (newDailies.length > 0) {
-        if (hasCompletedDailiesSection) {
-          // Append to existing Completed Dailies section
-          const dailiesSectionRegex = /## Completed Dailies[\s\S]*?(?=\n##|$)/;
-          const match = content.match(dailiesSectionRegex);
-
-          if (match) {
-            const existingSection = match[0];
-            const newSection =
-              existingSection +
-              "\n" +
-              newDailies.map((item: string) => `* ${item}`).join("\n");
-            content = content.replace(existingSection, newSection);
-          }
-        } else {
-          // Create new Completed Dailies section
-          if (!hasAchievementsSection || newAchievements.length === 0) {
-            newContent += "\n## Completed Dailies\n";
-          } else {
-            newContent += "\n\n## Completed Dailies\n";
-          }
-          newContent += newDailies
-            .map((item: string) => `* ${item}`)
-            .join("\n");
-        }
+      if (achievements.length === 0 && dailies.length === 0) {
+        new Notice("Nothing selected to add.");
+        return;
       }
 
-      // Handle insertion of new sections
-      if (newContent) {
-        if (!hasAchievementsSection && !hasCompletedDailiesSection) {
-          // No existing sections, append at the end
-          content += newContent;
-        } else if (!hasAchievementsSection && hasCompletedDailiesSection) {
-          // Insert new content (including Achievements section) before existing Completed Dailies
-          const dailiesRegex = /(## Completed Dailies)/;
-          content = content.replace(dailiesRegex, newContent + "\n$1");
-        } else if (hasAchievementsSection && !hasCompletedDailiesSection) {
-          // Achievements exist but no Completed Dailies, append new Dailies section at the end
-          content += newContent;
-        }
+      const block = buildHabiticaBlock(this.journalDate, achievements, dailies);
+      const newContent = body.length ? `${body}\n\n${block}\n` : `${block}\n`;
+
+      const editor = this.getOpenEditor(activeFile);
+      if (editor) {
+        editor.setValue(newContent);
+      } else {
+        await this.app.vault.modify(activeFile, newContent);
       }
 
-      // Save the changes
-      await this.app.vault.modify(activeFile, content);
-
-      const totalItems = Object.keys(this.selectedItems).length;
-      const newItemCount = newAchievements.length + newDailies.length;
-
-      if (newItemCount > 0) {
+      if (added > 0) {
         new Notice(
-          `Successfully updated journal entry for ${this.journalDate}. Added ${newItemCount} new items (${totalItems} total selected).`
+          `RetroTagged ${this.journalDate}: added ${added} item${
+            added === 1 ? "" : "s"
+          } at the bottom of the note.`
         );
       } else {
         new Notice(
@@ -432,58 +386,6 @@ export class RetroTaggerModal extends Modal {
       console.error("Error rendering selected items:", error);
       new Notice("Error updating journal entry. See console for details.");
     }
-  }
-
-  // Get existing achievements from content
-  private async getExistingAchievements(content: string): Promise<string[]> {
-    const achievements: string[] = [];
-    const achievementsRegex = new RegExp(
-      `## Achievements on ${this.journalDate}([\\s\\S]*?)(?=\\n##|$)`
-    );
-    const achievementsMatch = content.match(achievementsRegex);
-
-    if (achievementsMatch) {
-      const achievementsSection = achievementsMatch[1];
-      const habitLines = achievementsSection.match(/\* (.+?) - Positive:/g);
-
-      if (habitLines) {
-        for (const line of habitLines) {
-          const habitMatch = line.match(/\* (.+?) - Positive:/);
-          if (habitMatch) {
-            achievements.push(habitMatch[1].trim());
-          }
-        }
-      }
-    }
-
-    return achievements;
-  }
-
-  // Get existing dailies from content
-  private async getExistingDailies(content: string): Promise<string[]> {
-    const dailies: string[] = [];
-    const dailiesRegex = /## Completed Dailies([\s\S]*?)(?=\n##|$)/;
-    const dailiesMatch = content.match(dailiesRegex);
-
-    if (dailiesMatch) {
-      const dailiesSection = dailiesMatch[1];
-      const dailyLines = dailiesSection.match(/^\* (.+)$/gm);
-
-      if (dailyLines) {
-        for (const line of dailyLines) {
-          const dailyMatch = line.match(/^\* (.+)$/);
-          if (dailyMatch) {
-            const dailyName = dailyMatch[1].trim();
-            // Skip habit lines that might be in the dailies section
-            if (!dailyName.includes(" - Positive:")) {
-              dailies.push(dailyName);
-            }
-          }
-        }
-      }
-    }
-
-    return dailies;
   }
 
   // Add CSS styles for the RetroTagger UI

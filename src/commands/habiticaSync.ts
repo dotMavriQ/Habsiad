@@ -1,5 +1,6 @@
 import { MarkdownView, Notice, TFile } from "obsidian";
 import type { IHabsiadPlugin } from "../habitica/types/obsidian";
+import { withSectionsAtBottom } from "../utils/journalSections";
 
 /**
  * Habitica Synchronization Command Handler
@@ -65,7 +66,7 @@ export class HabiticaSyncCommand {
     try {
       const tasks = await this.plugin.habiticaService.getTasks();
 
-      const habitsOutput = tasks
+      const achievements = tasks
         .filter(
           (task) =>
             task.type === "habit" &&
@@ -73,14 +74,12 @@ export class HabiticaSyncCommand {
         )
         .map(
           (task) =>
-            `* ${task.text} - Positive: ${task.counterUp}, Negative: ${task.counterDown}`
-        )
-        .join("\n");
+            `${task.text} - Positive: ${task.counterUp}, Negative: ${task.counterDown}`
+        );
 
-      const dailiesOutput = tasks
+      const dailies = tasks
         .filter((task) => task.type === "daily" && task.completed)
-        .map((task) => `* ${task.text}`)
-        .join("\n");
+        .map((task) => task.text);
 
       // Use the date of the journal file being written into, not the current
       // system date. The filename is validated as YYYY-MM-DD.md upstream, so
@@ -88,10 +87,13 @@ export class HabiticaSyncCommand {
       // backfilling an older day. (Fixes #17, #18)
       const journalDate =
         activeView.file?.basename ?? window.moment().format("YYYY-MM-DD");
-      const output = `## Achievements on ${journalDate}\n${habitsOutput}\n\n## Completed Dailies\n${dailiesOutput}`;
 
+      // Always rebuild the sections at the bottom of the note (replacing any
+      // existing copy for this date) instead of dumping them at the cursor.
       const editor = activeView.editor;
-      editor.replaceRange(output, editor.getCursor());
+      editor.setValue(
+        withSectionsAtBottom(editor.getValue(), journalDate, achievements, dailies)
+      );
 
       new Notice("Habits and Dailies inserted successfully.");
     } catch (error) {
